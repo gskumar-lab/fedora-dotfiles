@@ -232,13 +232,13 @@ transition_on_startup = true
     interval_seconds = 900
 
     [wallpaper.default]
-    path = "/home/gskumar/.config/backgrounds/wallhaven-lm39el_1920x1080.png"
+    path = "/home/gskumar/.config/backgrounds/arthur-morgan-red-dead-redemption-2-rockstar-games-1920x1080-9051.jpg"
 
     [wallpaper.last]
-    path = "/home/gskumar/.config/backgrounds/wallhaven-lm39el_1920x1080.png"
+    path = "/home/gskumar/.config/backgrounds/arthur-morgan-red-dead-redemption-2-rockstar-games-1920x1080-9051.jpg"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/gskumar/.config/backgrounds/wallhaven-lm39el_1920x1080.png"
+    path = "/home/gskumar/.config/backgrounds/arthur-morgan-red-dead-redemption-2-rockstar-games-1920x1080-9051.jpg"
 
 [weather]
 enabled = false
