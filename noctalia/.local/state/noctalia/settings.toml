@@ -1,0 +1,284 @@
+config_version = 14
+
+[accessibility]
+ui_scale = 1.2500000111758709
+
+[bar.default]
+background_opacity = 0.89999997988343239
+capsule_thickness = 0.69999998807907104
+center = [ "notifications", "toggle", "clock", "group:g1", "widget_2" ]
+end = [ "group:g3", "clipboard", "group:g4", "group:g2" ]
+font_family = "Adwaita Sans"
+font_scale = 1.1999999806284904
+margin_ends = 0
+padding = 25
+radius = 0
+shadow = false
+start = [ "control-center", "workspaces", "active_window" ]
+thickness = 30
+widget_spacing = 10
+
+    [bar.default.dead_zone.actions]
+    left = "dock-toggle"
+
+    [[bar.default.capsule_group]]
+    accordion = true
+    accordion_direction = "end"
+    enabled = true
+    fill = "surface_variant"
+    id = "g1"
+    members = [ "caffeine", "widget" ]
+    opacity = 1.0
+    padding = 6.0
+
+    [[bar.default.capsule_group]]
+    accordion = false
+    accordion_direction = "end"
+    enabled = true
+    fill = "surface_variant"
+    id = "g2"
+    members = [ "volume", "brightness", "battery" ]
+    opacity = 1.0
+    padding = 6.0
+
+    [[bar.default.capsule_group]]
+    accordion = false
+    accordion_direction = "end"
+    enabled = true
+    fill = "surface_variant"
+    id = "g3"
+    members = [ "tray", "media" ]
+    opacity = 1.0
+    padding = 6.0
+
+    [[bar.default.capsule_group]]
+    accordion = false
+    accordion_direction = "end"
+    enabled = true
+    fill = "surface_variant"
+    id = "g4"
+    members = [ "dns-switcher", "network", "bluetooth" ]
+    opacity = 1.0
+    padding = 6.0
+
+[battery]
+warning_threshold = 20
+
+[[control_center.shortcuts]]
+type = "notification"
+
+[[control_center.shortcuts]]
+type = "power_profile"
+
+[[control_center.shortcuts]]
+type = "wallpaper"
+
+[desktop_widgets]
+enabled = false
+
+[dock]
+auto_hide = true
+enabled = false
+launcher_position = "start"
+pinned = [ "brave-origin", "pcmanfm" ]
+reserve_space = false
+show_dots = true
+
+[hooks]
+battery_charging = "noctalia msg power-set balanced"
+battery_discharging = "noctalia msg power-set power-saver"
+battery_plugged = "noctalia msg power-set balanced"
+session_unlocked = "notify-send \"Welcome Back\" -u low"
+
+[idle]
+behavior_order = [ "screen-off", "lock", "lock-and-suspend" ]
+
+    [idle.behavior.lock]
+    action = "lock"
+    enabled = true
+    timeout = 180.0
+
+    [idle.behavior.lock-and-suspend]
+    action = "lock_and_suspend"
+    enabled = true
+    timeout = 900.0
+
+    [idle.behavior.screen-off]
+    action = "screen_off"
+    enabled = true
+    timeout = 60.0
+
+[lockscreen]
+fingerprint = false
+
+[lockscreen_widgets]
+enabled = false
+schema_version = 2
+widget_order = [ "lockscreen-login-box@eDP-1" ]
+
+    [lockscreen_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@eDP-1"]
+    box_height = 196.0
+    box_width = 810.0
+    cx = 960.0
+    cy = 898.0
+    output = "eDP-1"
+    placement_height = 1080.0
+    placement_width = 1920.0
+    rotation = 0.0
+    type = "login_box"
+
+        [lockscreen_widgets.widget."lockscreen-login-box@eDP-1".settings]
+        background_color = "surface_variant"
+        background_opacity = 0.88
+        background_radius = 12.0
+        center_password_text = false
+        input_opacity = 1.0
+        input_radius = 6.0
+        layout = "regular"
+        show_caps_lock = true
+        show_keyboard_layout = true
+        show_login_button = true
+        show_media = true
+        show_session_buttons = true
+        show_unlock_hint = true
+        show_weather = true
+
+[plugins]
+enabled = [ "alexander/screen-toolkit", "maddingo/hypr-layout-switcher", "thepunkoff/pomodoro" ]
+
+[shell]
+font_family = "JetBrainsMono Nerd Font Propo"
+polkit_agent = true
+time_format = "%I:%M %p"
+
+    [shell.animation]
+    speed = 0.60000000894069672
+
+    [shell.launcher]
+    categories = false
+
+    [shell.panel]
+    transparency_mode = "soft"
+
+    [[shell.session.actions]]
+    action = "lock"
+    countdown_seconds = 0.0
+    enabled = true
+    variant = "default"
+
+    [[shell.session.actions]]
+    action = "logout"
+    countdown_seconds = 0.0
+    enabled = true
+    variant = "default"
+
+    [[shell.session.actions]]
+    action = "lock_and_suspend"
+    countdown_seconds = 0.0
+    enabled = true
+    variant = "default"
+
+    [[shell.session.actions]]
+    action = "reboot"
+    countdown_seconds = 0.0
+    enabled = true
+    variant = "destructive"
+
+    [[shell.session.actions]]
+    action = "shutdown"
+    countdown_seconds = 0.0
+    enabled = true
+    variant = "destructive"
+
+[system.monitor]
+enabled = false
+
+[theme]
+builtin = "Tokyo-Night"
+community_palette = "Lilac AMOLED"
+mode = "dark"
+source = "wallpaper"
+wallpaper_scheme = "soft"
+
+    [theme.templates]
+    builtin_ids = [ "btop", "foot", "gtk3", "gtk4", "hyprland", "kcolorscheme", "qt", "starship" ]
+    community_ids = [
+        "brave-origin",
+        "zen-browser",
+        "telegram",
+        "rofi",
+        "fastfetch",
+        "hyprtoolkit",
+        "papirus-icons",
+        "bat",
+        "fzf",
+        "glow",
+        "tmux",
+        "yazi"
+    ]
+
+[wallpaper]
+directory = "/home/gskumar/.config/backgrounds"
+transition = [ "disc", "fade", "wipe", "zoom" ]
+transition_on_startup = true
+
+    [wallpaper.automation]
+    enabled = true
+    interval_seconds = 900
+
+    [wallpaper.default]
+    path = "/home/gskumar/.config/backgrounds/wallhaven-lm39el_1920x1080.png"
+
+    [wallpaper.last]
+    path = "/home/gskumar/.config/backgrounds/wallhaven-lm39el_1920x1080.png"
+
+    [wallpaper.monitors.eDP-1]
+    path = "/home/gskumar/.config/backgrounds/wallhaven-lm39el_1920x1080.png"
+
+[weather]
+enabled = false
+
+[widget.active_window]
+icon_size = 20
+max_length = 300
+
+[widget.clock]
+anchor = true
+capsule = true
+capsule_padding = 12
+format = "%I:%M %p"
+tooltip_format = "%I:%M %p %A, %x"
+
+[widget.dns-switcher]
+show_label = false
+type = "nightwatch75/dns-switcher:dns-switcher"
+
+[widget.media]
+hide_when_no_media = true
+show_progress = true
+
+[widget.network]
+vpn_status = "both"
+
+[widget.notifications]
+hide_when_no_unread = true
+
+[widget.toggle]
+type = "maddingo/hypr-layout-switcher:toggle"
+
+[widget.widget]
+type = "alexander/screen-toolkit:widget"
+
+[widget.widget_2]
+type = "thepunkoff/pomodoro:widget"
+
+[widget.workspaces]
+active_pill_size = 2.25
+capsule = true
+hide_when_empty = true
+scale = 1.2

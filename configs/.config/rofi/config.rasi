@@ -1,0 +1,8 @@
+configuration {
+	modi: "window,run,drun,ssh,filebrowser";
+	font: "JetBrains Mono Nerd Font Propo 14";
+}
+
+@theme "noctalia.rasi"
+
+

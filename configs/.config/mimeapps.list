@@ -1,0 +1,27 @@
+[Added Associations]
+application/x-shellscript=geany.desktop;kitty-open.desktop;
+application/x-subrip=geany.desktop;
+application/xml=geany.desktop;brave-origin.desktop;com.brave.Origin.desktop;
+application/zstd=org.kde.drawy.desktop;
+image/jpeg=feh.desktop;com.brave.Origin.desktop;brave-origin.desktop;
+image/png=feh.desktop;com.brave.Origin.desktop;brave-origin.desktop;
+text/markdown=geany.desktop;org.onlyoffice.desktopeditors.desktop;
+video/webm=mpv.desktop;app.zen_browser.zen.desktop;
+
+[Default Applications]
+application/x-shellscript=geany.desktop;
+application/x-subrip=geany.desktop;
+application/xml=geany.desktop;
+application/zstd=org.kde.drawy.desktop;
+image/jpeg=feh.desktop;
+image/png=feh.desktop;
+text/html=brave-origin.desktop
+text/markdown=geany.desktop;
+video/webm=mpv.desktop;
+x-scheme-handler/about=brave-origin.desktop
+x-scheme-handler/http=brave-origin.desktop
+x-scheme-handler/https=brave-origin.desktop
+x-scheme-handler/unknown=brave-origin.desktop
+
+[Removed Associations]
+application/x-subrip=org.onlyoffice.desktopeditors.desktop;
