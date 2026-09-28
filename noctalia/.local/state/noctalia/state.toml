@@ -1,3 +1,6 @@
+[plugin_store]
+sort = "added_at_desc"
+
 [security_migrations]
 calendar_credentials_v1 = true
 
