@@ -80,7 +80,7 @@ enabled = false
 auto_hide = true
 enabled = true
 launcher_position = "start"
-pinned = [ "brave-origin", "pcmanfm" ]
+pinned = [ "brave-origin", "pcmanfm", "dolphin" ]
 reserve_space = false
 show_dots = true
 
@@ -232,13 +232,13 @@ transition_on_startup = true
     interval_seconds = 900
 
     [wallpaper.default]
-    path = "/home/gskumar/.config/backgrounds/neon-lights-dark-1920x1080-12563.jpg"
+    path = "/home/gskumar/.config/backgrounds/glowing-corridor-1920x1080-12535.jpg"
 
     [wallpaper.last]
-    path = "/home/gskumar/.config/backgrounds/neon-lights-dark-1920x1080-12563.jpg"
+    path = "/home/gskumar/.config/backgrounds/glowing-corridor-1920x1080-12535.jpg"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/gskumar/.config/backgrounds/neon-lights-dark-1920x1080-12563.jpg"
+    path = "/home/gskumar/.config/backgrounds/glowing-corridor-1920x1080-12535.jpg"
 
 [weather]
 enabled = false
