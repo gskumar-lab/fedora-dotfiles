@@ -3,5 +3,10 @@ use = "yazi-rs/plugins:mount"
 rev = "f703392"
 hash = "b95f898e6dc60b52edbc415952e14395"
 
+[[plugin.deps]]
+use = "ndtoan96/ouch"
+rev = "596b666"
+hash = "c2f4f4aca257dcceafa9e3b828dbf1c9"
+
 [flavor]
 deps = []
