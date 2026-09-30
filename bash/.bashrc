@@ -2,7 +2,7 @@
 
 # Source global definitions
 if [ -f /etc/bashrc ]; then
-    . /etc/bashrc
+  . /etc/bashrc
 fi
 
 # User PATH
@@ -14,11 +14,11 @@ export TODO_DIR="$HOME"
 
 # User specific aliases and functions
 if [ -d ~/.bashrc.d ]; then
-    for rc in ~/.bashrc.d/*; do
-        if [ -f "$rc" ]; then
-            . "$rc"
-        fi
-    done
+  for rc in ~/.bashrc.d/*; do
+    if [ -f "$rc" ]; then
+      . "$rc"
+    fi
+  done
 fi
 unset rc
 
@@ -42,10 +42,9 @@ HISTFILESIZE=100000
 # Ignore duplicate commands and commands that start with a space
 HISTCONTROL=ignoreboth:erasedups
 
-# Update the history file immediately after every command, 
+# Update the history file immediately after every command,
 # rather than waiting for the terminal session to close
 #PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
-
 
 #Shell Options (Quality of Life)
 #Bash has built-in features that are disabled by default. Turning these on makes navigating the file system much smoother.
@@ -65,9 +64,9 @@ alias grep='grep --color=auto'
 alias diff='diff --color=auto'
 
 # Better list commands
-alias ll='ls -lAh'      # Long format, human-readable sizes, includes hidden files
-alias la='ls -A'        # Just hidden files
-alias l='ls -CF'        # Column format
+alias ll='ls -lAh' # Long format, human-readable sizes, includes hidden files
+alias la='ls -A'   # Just hidden files
+alias l='ls -CF'   # Column format
 
 # Quick navigation up the directory tree
 alias ..='cd ..'
@@ -80,8 +79,9 @@ alias cp='cp -i'
 alias mv='mv -i'
 
 # Quick text editor access (change to nvim, code, or vim)
-export EDITOR="vim"
+export EDITOR="nvim"
 alias e="$EDITOR"
+alias vim="nvim"
 
 #Time-Saving Functions
 #While aliases are great for static commands, functions allow you to pass arguments. These act like mini-scripts.
@@ -90,42 +90,43 @@ alias e="$EDITOR"
 #Instead of typing mkdir new_folder and then cd new_folder, this does both in one step.
 
 mkcd() {
-    mkdir -p "$1" && cd "$1"
+  mkdir -p "$1" && cd "$1"
 }
 
 #Extract Anything (extract)
 #Never memorize tar flags again. Just type extract archive.tar.gz or extract file.zip, and it handles the rest based on the file extension.
 
 extract() {
-    if [[ $# -ne 1 ]]; then
-        echo "Usage: extract <archive>"
-        return 1
-    fi
+  if [[ $# -ne 1 ]]; then
+    echo "Usage: extract <archive>"
+    return 1
+  fi
 
-    if [[ ! -f "$1" ]]; then
-        echo "Not a file: $1"
-        return 1
-    fi
+  if [[ ! -f "$1" ]]; then
+    echo "Not a file: $1"
+    return 1
+  fi
 
-    case "$1" in
-        *.tar.bz2) tar xvjf "$1" ;;
-        *.tar.gz)  tar xvzf "$1" ;;
-        *.bz2)     bunzip2 "$1" ;;
-        *.rar)     unrar x "$1" ;;
-        *.gz)      gunzip "$1" ;;
-        *.tar)     tar xvf "$1" ;;
-        *.tbz2)    tar xvjf "$1" ;;
-        *.tgz)     tar xvzf "$1" ;;
-        *.zip)     unzip "$1" ;;
-        *.Z)       uncompress "$1" ;;
-        *.7z)      7z x "$1" ;;
-        *)         echo "Unknown archive type: $1"; return 1 ;;
-    esac
+  case "$1" in
+  *.tar.bz2) tar xvjf "$1" ;;
+  *.tar.gz) tar xvzf "$1" ;;
+  *.bz2) bunzip2 "$1" ;;
+  *.rar) unrar x "$1" ;;
+  *.gz) gunzip "$1" ;;
+  *.tar) tar xvf "$1" ;;
+  *.tbz2) tar xvjf "$1" ;;
+  *.tgz) tar xvzf "$1" ;;
+  *.zip) unzip "$1" ;;
+  *.Z) uncompress "$1" ;;
+  *.7z) 7z x "$1" ;;
+  *)
+    echo "Unknown archive type: $1"
+    return 1
+    ;;
+  esac
 }
-
 
 #starship init
 eval "$(starship init bash)"
-
 
 eval "$(zoxide init --cmd cd bash)"

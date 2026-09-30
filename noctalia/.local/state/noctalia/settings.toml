@@ -7,7 +7,7 @@ ui_scale = 1.2500000111758709
 background_opacity = 0.89999997988343239
 capsule_thickness = 0.69999998807907104
 center = [ "notifications", "toggle", "clock", "group:g1", "widget_2" ]
-end = [ "group:g3", "clipboard", "group:g4", "group:g2" ]
+end = [ "group:g3", "group:g4", "group:g2" ]
 font_family = "Adwaita Sans"
 font_scale = 1.1999999806284904
 margin_ends = 0
@@ -72,6 +72,9 @@ type = "power_profile"
 
 [[control_center.shortcuts]]
 type = "wallpaper"
+
+[[control_center.shortcuts]]
+type = "clipboard"
 
 [desktop_widgets]
 enabled = false
@@ -211,6 +214,7 @@ wallpaper_scheme = "soft"
         "brave-origin",
         "zen-browser",
         "telegram",
+        "neovim",
         "rofi",
         "fastfetch",
         "hyprtoolkit",
@@ -232,13 +236,13 @@ transition_on_startup = true
     interval_seconds = 900
 
     [wallpaper.default]
-    path = "/home/gskumar/.config/backgrounds/wallhaven-lm39el_1920x1080.jpeg"
+    path = "/home/gskumar/.config/backgrounds/neon-lights-3d-1920x1080-12485.jpg"
 
     [wallpaper.last]
-    path = "/home/gskumar/.config/backgrounds/wallhaven-lm39el_1920x1080.jpeg"
+    path = "/home/gskumar/.config/backgrounds/neon-lights-3d-1920x1080-12485.jpg"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/gskumar/.config/backgrounds/wallhaven-lm39el_1920x1080.jpeg"
+    path = "/home/gskumar/.config/backgrounds/neon-lights-3d-1920x1080-12485.jpg"
 
 [weather]
 enabled = false
