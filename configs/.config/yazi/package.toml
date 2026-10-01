@@ -1,6 +1,6 @@
 [[plugin.deps]]
 use = "yazi-rs/plugins:mount"
-rev = "f703392"
+rev = "33dde28"
 hash = "b95f898e6dc60b52edbc415952e14395"
 
 [[plugin.deps]]

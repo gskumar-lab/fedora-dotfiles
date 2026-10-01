@@ -81,7 +81,7 @@ enabled = false
 
 [dock]
 auto_hide = true
-enabled = true
+enabled = false
 launcher_position = "start"
 pinned = [ "brave-origin", "pcmanfm", "dolphin" ]
 reserve_space = false
@@ -236,13 +236,13 @@ transition_on_startup = true
     interval_seconds = 900
 
     [wallpaper.default]
-    path = "/home/gskumar/.config/backgrounds/neon-lights-3d-1920x1080-12485.jpg"
+    path = "/home/gskumar/.config/backgrounds/colorful-neon-1920x1080-12553.jpg"
 
     [wallpaper.last]
-    path = "/home/gskumar/.config/backgrounds/neon-lights-3d-1920x1080-12485.jpg"
+    path = "/home/gskumar/.config/backgrounds/colorful-neon-1920x1080-12553.jpg"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/gskumar/.config/backgrounds/neon-lights-3d-1920x1080-12485.jpg"
+    path = "/home/gskumar/.config/backgrounds/colorful-neon-1920x1080-12553.jpg"
 
 [weather]
 enabled = false

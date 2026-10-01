@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Minimal TUI Note App: New, Search, Tags, and Delete
+# TUI Note App: New, Read, Search, Tags, Delete
 
 # ==========================================
 # CONFIGURATION
@@ -9,23 +9,14 @@ EDITOR="${EDITOR:-vim}"
 EXT=".md"
 
 mkdir -p "$NOTES_DIR"
-# By cd-ing directly, we ensure all fzf paths are clean and relative
 cd "$NOTES_DIR" || exit 1
 
 # ==========================================
-# BULLETPROOF PREVIEW LOGIC
+# PREVIEW LOGIC (with Glow Integration)
 # ==========================================
-# fzf safely assigns the unquoted path directly to a bash variable
 export FZF_PREVIEW_OPTS='
     file={1}
     line={2}
-    
-    cmd="cat"
-    if command -v bat >/dev/null 2>&1; then 
-        cmd="bat --color=always --style=plain"
-    elif command -v batcat >/dev/null 2>&1; then 
-        cmd="batcat --color=always --style=plain"
-    fi
     
     if [ ! -f "$file" ]; then
         echo "Error: Cannot read file -> $file"
@@ -33,9 +24,28 @@ export FZF_PREVIEW_OPTS='
     fi
     
     if [ -n "$line" ]; then
+        # SEARCH MODE: Needs raw text to jump to line number
+        cmd="cat"
+        if command -v bat >/dev/null 2>&1; then 
+            cmd="bat --color=always --style=plain"
+        elif command -v batcat >/dev/null 2>&1; then 
+            cmd="batcat --color=always --style=plain"
+        fi
+        
         eval "$cmd \"\$file\"" 2>/dev/null | tail -n +"$line" | head -n 30
     else
-        eval "$cmd \"\$file\"" 2>/dev/null | head -n 30
+        # FULL FILE MODE: Use Glow for rich markdown rendering
+        if command -v glow >/dev/null 2>&1; then
+            glow -s dark "$file" 2>/dev/null
+        else
+            cmd="cat"
+            if command -v bat >/dev/null 2>&1; then 
+                cmd="bat --color=always --style=plain"
+            elif command -v batcat >/dev/null 2>&1; then 
+                cmd="batcat --color=always --style=plain"
+            fi
+            eval "$cmd \"\$file\"" 2>/dev/null | head -n 30
+        fi
     fi
 '
 
@@ -64,6 +74,38 @@ cmd_new() {
     $EDITOR "$file"
 }
 
+cmd_read() {
+    local result key file
+    # --expect captures the key pressed before exiting fzf
+    result=$(find . -type f -name "*$EXT" 2>/dev/null | sed 's|^\./||' | sort -r | \
+        fzf --prompt="📖 Read (Enter: Read, Ctrl-E: Edit)> " \
+            --expect=ctrl-e \
+            --border=rounded \
+            --preview "$FZF_PREVIEW_OPTS" \
+            --preview-window="right:60%:wrap")
+            
+    [[ -z "$result" ]] && return
+    
+    key=$(echo "$result" | head -n 1)
+    file=$(echo "$result" | tail -n +2)
+    
+    [[ -z "$file" ]] && return
+    
+    if [[ "$key" == "ctrl-e" ]]; then
+        $EDITOR "$file"
+    else
+        if command -v glow >/dev/null 2>&1; then
+            glow -p "$file"
+        elif command -v bat >/dev/null 2>&1; then
+            bat --paging=always "$file"
+        elif command -v batcat >/dev/null 2>&1; then
+            batcat --paging=always "$file"
+        else
+            less "$file"
+        fi
+    fi
+}
+
 cmd_search() {
     local selected
     selected=$(rg --color=never -n "^" . 2>/dev/null |
@@ -89,7 +131,6 @@ cmd_tags() {
     
     if [[ -n "$tag" ]]; then
         local file
-        # rg -l gets files containing the tag. sed cleans up the ./ prefix.
         file=$(rg -l "$tag" . 2>/dev/null | sed 's|^\./||' | \
             fzf --prompt="Notes with $tag> " \
                 --border=rounded \
@@ -134,7 +175,7 @@ for cmd in rg fzf $EDITOR; do
 done
 
 while true; do
-    choice=$(printf "📝 New Note\n🔍 Search Notes\n🏷️ Browse by Tag\n🗑️ Delete Note(s)\n❌ Quit" | \
+    choice=$(printf "📝 New Note\n📖 Read Note\n🔍 Search Notes\n🏷️ Browse by Tag\n🗑️ Delete Note(s)\n❌ Quit" | \
         fzf --prompt="Menu> " \
             --layout=reverse \
             --border=rounded \
@@ -146,6 +187,7 @@ while true; do
     
     case "$choice" in
         "📝 New Note")        cmd_new ;;
+        "📖 Read Note")       cmd_read ;;
         "🔍 Search Notes")    cmd_search ;;
         "🏷️ Browse by Tag")   cmd_tags ;;
         "🗑️ Delete Note(s)")  cmd_delete ;;

@@ -81,7 +81,7 @@ alias mv='mv -i'
 # Quick text editor access (change to nvim, code, or vim)
 export EDITOR="nvim"
 alias e="$EDITOR"
-alias vim="nvim"
+#alias vim="nvim"
 
 #Time-Saving Functions
 #While aliases are great for static commands, functions allow you to pass arguments. These act like mini-scripts.
