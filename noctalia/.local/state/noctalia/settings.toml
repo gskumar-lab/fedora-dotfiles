@@ -81,7 +81,7 @@ enabled = false
 
 [dock]
 auto_hide = true
-enabled = false
+enabled = true
 launcher_position = "start"
 pinned = [ "brave-origin", "pcmanfm", "dolphin" ]
 reserve_space = false
@@ -188,12 +188,14 @@ time_format = "%I:%M %p"
 
     [[shell.session.actions]]
     action = "reboot"
+    command = "hyprshutdown -t 'Restarting...' --post-cmd 'reboot'"
     countdown_seconds = 0.0
     enabled = true
     variant = "destructive"
 
     [[shell.session.actions]]
     action = "shutdown"
+    command = "hyprshutdown -t 'Shutting down...' --post-cmd 'shutdown -P 0'"
     countdown_seconds = 0.0
     enabled = true
     variant = "destructive"
@@ -236,13 +238,13 @@ transition_on_startup = true
     interval_seconds = 900
 
     [wallpaper.default]
-    path = "/home/gskumar/.config/backgrounds/colorful-neon-1920x1080-12553.jpg"
+    path = "/home/gskumar/.config/backgrounds/cyberpunk-girl-1920x1080-16121.jpg"
 
     [wallpaper.last]
-    path = "/home/gskumar/.config/backgrounds/colorful-neon-1920x1080-12553.jpg"
+    path = "/home/gskumar/.config/backgrounds/cyberpunk-girl-1920x1080-16121.jpg"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/gskumar/.config/backgrounds/colorful-neon-1920x1080-12553.jpg"
+    path = "/home/gskumar/.config/backgrounds/cyberpunk-girl-1920x1080-16121.jpg"
 
 [weather]
 enabled = false
