@@ -98,7 +98,8 @@ hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd(noctCall .. "panel-toggle sessio
 hl.bind(mainMod .. " + Y", hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-large -e yazi ")) --| Yazi file manager
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd(launchPrefix .. "super-productivity")) --| Super productivity
 hl.bind(" ALT + Space", hl.dsp.exec_cmd(launchPrefix .. "~/.config/scripts/tools-manager.sh")) --| Tool manager
-hl.bind(" ALT + Z ", hl.dsp.exec_cmd(launchPrefix .. "voxtype record toggle")) --| voice dictate
+--hl.bind(" ALT + Z ", hl.dsp.exec_cmd(launchPrefix .. "voxtype record toggle")) --| voice dictate
+hl.bind(" ALT + Z ", hl.dsp.exec_cmd(launchPrefix .. "handy --toggle-transcription")) --| voice dictate
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd(launchPrefix .. "~/.config/scripts/webapps-launcher.sh")) --| Webapps launcher
 hl.bind(mainMod .. " + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-large -e ~/.cargo/bin/tuxedo")) --| Tuxedo todo
 --hl.bind(mainMod .. " + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.config/scripts/view-notes.sh")) --| View Quick notes

@@ -121,6 +121,7 @@ hl.window_rule({
 
 hl.window_rule({ match = { class = "^foot$", title = "test-float" }, float = true })
 --hl.window_rule({ match = { class = "^xarchiver$" }, float = true })
+hl.window_rule({ match = { class = "^foot$", title = "apps-float-tiny" }, float = true, size = { "max(monitor_w, monitor_h)*0.25", "min(monitor_w, monitor_h)*0.25" }})
 hl.window_rule({ match = { class = "^foot$", title = "apps-float-small" }, float = true, size = { "max(monitor_w, monitor_h)*0.4", "min(monitor_w, monitor_h)*0.4" }})
 hl.window_rule({ match = { class = "^foot$", title = "apps-float-medium" }, float = true, size = { "max(monitor_w, monitor_h)*0.6", "min(monitor_w, monitor_h)*0.6" }})
 hl.window_rule({ match = { class = "^foot$", title = "apps-float-large" }, float = true, size = { "max(monitor_w, monitor_h)*0.8", "min(monitor_w, monitor_h)*0.8" }})

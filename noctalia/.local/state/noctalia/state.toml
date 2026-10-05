@@ -5,4 +5,4 @@ sort = "added_at_desc"
 calendar_credentials_v1 = true
 
 [theme_templates]
-applied_builtin_ids = "btop foot gtk3 gtk4 hyprland kcolorscheme qt starship"
+applied_builtin_ids = "btop foot gtk3 gtk4 hyprland kcolorscheme mango qt starship"

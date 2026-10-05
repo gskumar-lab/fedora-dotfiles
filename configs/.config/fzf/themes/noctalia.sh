@@ -1,19 +1,19 @@
 fzf_theme_opts="\
---color=bg+:#2b2130
---color=bg:#201a23
---color=spinner:#f2f2f3
---color=hl:#fd4663
---color=fg:#f2f2f3
---color=header:#fd4663
---color=info:#b675d7
---color=pointer:#f2f2f3
---color=marker:#b4afb6
---color=fg+:#f2f2f3
---color=prompt:#b675d7
---color=hl+:#fd4663
---color=selected-bg:#2b2130
---color=border:#2b2130
---color=label:#f2f2f3"
+--color=bg+:#41474d
+--color=bg:#111416
+--color=spinner:#e2e2e5
+--color=hl:#ffb4ab
+--color=fg:#e2e2e5
+--color=header:#ffb4ab
+--color=info:#9dccf1
+--color=pointer:#e2e2e5
+--color=marker:#c1c7ce
+--color=fg+:#e2e2e5
+--color=prompt:#9dccf1
+--color=hl+:#ffb4ab
+--color=selected-bg:#41474d
+--color=border:#41474d
+--color=label:#e2e2e5"
 
 export FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS:+$FZF_DEFAULT_OPTS
 }$fzf_theme_opts"
