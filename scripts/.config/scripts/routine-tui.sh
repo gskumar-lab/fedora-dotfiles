@@ -7,6 +7,8 @@ command -v fzf >/dev/null 2>&1 || { echo -e "\033[1;31mError:\033[0m 'fzf' is no
 
 SCRIPT_PATH=$(realpath "$0" 2>/dev/null || readlink -f "$0")
 SCRIPT_NAME=$(basename "$SCRIPT_PATH")
+# Use environment TERMINAL if set, otherwise fallback to foot
+TERM_CMD="${TERMINAL:-foot}"
 
 DIR="${XDG_DATA_HOME:-$HOME/.local/share}/routine_planner"
 mkdir -p "$DIR"
@@ -41,48 +43,49 @@ DAY_SHORT=$(date +%a)
 # ==========================================
 sync_todo() {
     local tmp_todo=$(mktemp)
-    local tmp_done=$(mktemp)
-    local tmp_skip=$(mktemp)
     
-    cp "$DONE" "$tmp_done"
-    cp "$SKIP" "$tmp_skip"
-    
-    while IFS= read -r t; do
-        if echo "$t" | grep -q "@"; then
-            match=false
-            echo "$t" | grep -Eiq "@($DAY_SHORT|Daily)\b" && match=true
-            if [ "$IS_WEEKEND" = true ]; then
-                echo "$t" | grep -Eiq "@Weekend\b" && match=true
-            else
-                echo "$t" | grep -Eiq "@Weekday\b" && match=true
-            fi
-            if [ "$match" = false ]; then continue; fi
-        fi
-        
-        if grep -m 1 -Fxq "$t" "$tmp_done" 2>/dev/null; then
-            awk -v t="$t" 'BEGIN{removed=0} {if($0==t && removed==0){removed=1} else {print $0}}' "$tmp_done" > "${tmp_done}.new" && mv "${tmp_done}.new" "$tmp_done"
-            continue
-        fi
-        
-        if grep -m 1 -Fxq "$t" "$tmp_skip" 2>/dev/null; then
-            awk -v t="$t" 'BEGIN{removed=0} {if($0==t && removed==0){removed=1} else {print $0}}' "$tmp_skip" > "${tmp_skip}.new" && mv "${tmp_skip}.new" "$tmp_skip"
-            continue
-        fi
-        
-        echo "$t" >> "$tmp_todo"
-    done < "$MASTER"
+    # Use a single awk process to handle tags, done, and skip lists efficiently in memory
+    awk -v day="$DAY_SHORT" -v is_wknd="$IS_WEEKEND" '
+        BEGIN {
+            while ((getline < "'"$DONE"'") > 0) done_list[$0]++
+            while ((getline < "'"$SKIP"'") > 0) skip_list[$0]++
+        }
+        {
+            # 1. Tag Filtering
+            if ($0 ~ /@/) {
+                match_tag = 0
+                if ($0 ~ "@("day"|Daily)\\b") match_tag = 1
+                if (is_wknd == "true" && $0 ~ /@Weekend\b/) match_tag = 1
+                if (is_wknd == "false" && $0 ~ /@Weekday\b/) match_tag = 1
+                if (!match_tag) next
+            }
+            
+            # 2. Check if already Done or Skipped (handle duplicates)
+            if (done_list[$0] > 0) {
+                done_list[$0]--
+                next
+            }
+            if (skip_list[$0] > 0) {
+                skip_list[$0]--
+                next
+            }
+            
+            # 3. Output to TODO
+            print $0
+        }
+    ' "$MASTER" > "$tmp_todo"
     
     mv "$tmp_todo" "$TODO"
-    rm -f "$tmp_done" "$tmp_skip"
 }
 
 check_rollover() {
     LAST=$(cat "$LAST_RUN" 2>/dev/null)
     if [ "$LAST" != "$TODAY" ]; then
         if [ -n "$LAST" ]; then
-            [ -s "$TODO" ] && sed "s/^/$LAST MISSED /" "$TODO" >> "$HIST"
-            [ -s "$DONE" ] && sed "s/^/$LAST DONE /" "$DONE" >> "$HIST"
-            [ -s "$SKIP" ] && sed "s/^/$LAST SKIPPED /" "$SKIP" >> "$HIST"
+            # Replaced sed with awk to prevent delimiter collision on dates
+            [ -s "$TODO" ] && awk -v d="$LAST" '{print d " MISSED " $0}' "$TODO" >> "$HIST"
+            [ -s "$DONE" ] && awk -v d="$LAST" '{print d " DONE " $0}' "$DONE" >> "$HIST"
+            [ -s "$SKIP" ] && awk -v d="$LAST" '{print d " SKIPPED " $0}' "$SKIP" >> "$HIST"
         fi
         > "$DONE"
         > "$SKIP"
@@ -122,7 +125,7 @@ draw_timer() {
     printf "      ⏳ Remaining: ${BOLD}%02d:%02d${NC}\n\n" $mins $secs
     echo -e "      ${color}${bar}${DIM}${empty_bar}${NC} ${pct}%\n"
     echo -e "${DIM} ───────────────────────────────────────────────────${NC}"
-    echo -e "${DIM}  [q] Menu  │  [c] Complete Task  │  [n] Skip Timer${NC}"
+    echo -e "${DIM}  [q] Menu  │  [c] Complete Task  │  [n] Skip Timer  │  [p] Pause${NC}"
     printf "\033[J"
 }
 
@@ -141,10 +144,15 @@ run_pomodoro() {
             # --- WORK SESSION ---
             local left=$work_time
             local total=$work_time
+            local end_time=$(( $(date +%s) + total ))
             local action=""
             clear 
             
             while [ $left -gt 0 ]; do
+                # System clock check prevents execution delay time-drift
+                left=$(( end_time - $(date +%s) ))
+                [ $left -lt 0 ] && left=0
+
                 draw_timer $left $total "POMODORO SESSION" "$RED" "$p_task"
                 
                 read -t 1 -n 1 input
@@ -152,8 +160,17 @@ run_pomodoro() {
                     q) action="menu"; break ;;
                     c) action="complete"; break ;;
                     n) action="next"; break ;;
+		    p)
+                        draw_timer $left $total "PAUSED (Press 'p' to resume)" "$YELLOW" "$p_task"
+                        while true; do
+                            read -n 1 -s p_input
+                            # Case-insensitive check for 'p'
+                            [ "${p_input,,}" = "p" ] && break
+                        done
+                        # Shift the target end_time forward by the remaining time so we don't lose time
+                        end_time=$(( $(date +%s) + left ))
+                        ;;
                 esac
-                ((left--))
             done
 
             if [ "$action" = "complete" ]; then
@@ -195,8 +212,12 @@ run_pomodoro() {
                         # --- BREAK SESSION ---
                         local b_left=$break_time
                         local b_total=$break_time
+                        local b_end_time=$(( $(date +%s) + b_total ))
                         clear
                         while [ $b_left -gt 0 ]; do
+                            b_left=$(( b_end_time - $(date +%s) ))
+                            [ $b_left -lt 0 ] && b_left=0
+
                             draw_timer $b_left $b_total "SHORT BREAK" "$BLUE" "Rest your mind"
                             
                             read -t 1 -n 1 input
@@ -204,7 +225,6 @@ run_pomodoro() {
                                 q|n) break ;;
                                 c) echo "$p_task" >> "$DONE"; sync_todo; post_action="next"; break 2 ;;
                             esac
-                            ((b_left--))
                         done
 
                         if [ $b_left -eq 0 ]; then
@@ -231,11 +251,70 @@ run_pomodoro() {
 }
 
 # ==========================================
-# CLI Arguments parsing (Moved below functions)
+# Analytics & Streaks Engine
+# ==========================================
+show_analytics() {
+    clear
+    echo -e "${CYAN}╭───────────────────────────────────────────────────╮${NC}"
+    echo -e "${CYAN}│               ANALYTICS & STREAKS                 │${NC}"
+    echo -e "${CYAN}╰───────────────────────────────────────────────────╯${NC}\n"
+    
+    if [ ! -s "$HIST" ]; then
+        echo -e " ${DIM}No history logged yet.${NC}\n"
+        read -n 1 -s -p " Press any key to return..." 
+        return
+    fi
+
+    # Helper to calculate and print top 3 tasks for a specific status
+    print_top() {
+        grep " $1 " "$HIST" | cut -d' ' -f3- | sort | uniq -c | sort -nr | head -n 3 | \
+        awk -v color="$2" -v nc="$NC" '{ count=$1; $1=""; sub(/^[ \t]+/, ""); printf "   " color "%s" nc " (%s times)\n", $0, count }'
+    }
+
+    echo -e " ${GREEN}🏆 Most Completed Tasks:${NC}"
+    print_top "DONE" "$GREEN"
+    
+    echo -e "\n ${RED}✖ Most Missed Tasks:${NC}"
+    print_top "MISSED" "$RED"
+    
+    echo -e "\n ${DIM}⊘ Most Skipped Tasks:${NC}"
+    print_top "SKIPPED" "$DIM"
+
+    echo -e "\n ${YELLOW}🔥 Current Streaks (Consecutive Completed Days):${NC}"
+    # Read history file backwards to easily calculate current active streaks
+    awk '{a[i++]=$0} END {for (j=i-1; j>=0;) print a[j--] }' "$HIST" | awk '
+        {
+            status=$2; $1=""; $2=""; sub(/^[ \t]+/, ""); task=$0;
+            if (!processed[task]) {
+                if (status == "DONE") streak[task] = 1;
+                else streak[task] = -1; # Not currently on a streak
+                processed[task] = 1;
+            } else if (streak[task] > 0) {
+                if (status == "DONE") streak[task]++;
+                else streak[task] = -1; # Streak broken
+            }
+        }
+        END {
+            found=0;
+            for (t in streak) {
+                if (streak[t] > 1) {
+                    print "   " streak[t] " days : " t;
+                    found=1;
+                }
+            }
+            if (found==0) print "   No active multi-day streaks. Keep going!"
+        }
+    ' | sort -nr
+
+    echo ""
+    read -n 1 -s -p " Press any key to return..."
+}
+
+# ==========================================
+# CLI Arguments parsing
 # ==========================================
 case "$1" in
     --pomodoro)
-        # Dedicated execution state for the detached window
         run_pomodoro
         exit 0 ;;
 
@@ -243,15 +322,13 @@ case "$1" in
         todo_count=$(grep -c "^" "$TODO" || true)
         if [ "$todo_count" -gt 0 ]; then
             if command -v notify-send &> /dev/null; then
-                # Creates a clickable button. When clicked, it returns the string "open"
                 action=$(notify-send -u critical -t 0 \
                     --action="open=Open Planner" \
                     "⏰ Routine Reminder" \
                     "You have $todo_count tasks left today!")
 
-                # If the user clicks "Open Planner", launch it in foot
                 if [ "$action" = "open" ]; then
-                    systemd-run --user --quiet foot "$SCRIPT_PATH"
+                    systemd-run --user --quiet "$TERM_CMD" "$SCRIPT_PATH"
                 fi
             fi
         fi
@@ -282,7 +359,7 @@ dialog_box() {
     local prompt="$2"
     clear
     echo -e "${CYAN}╭───────────────────────────────────────────────────╮${NC}"
-    printf "${CYAN}│ %-49s │${NC}\n" "${BOLD}${title}${NC}"
+    printf "${CYAN}│ %-49s         │${NC}\n" "${BOLD}${title}${NC}"
     echo -e "${CYAN}╰───────────────────────────────────────────────────╯${NC}\n"
     read -e -p " ❯ $prompt " dialog_result
 }
@@ -303,7 +380,6 @@ while true; do
     empty_bar=$(printf "%0.s┄" $(seq 1 $empty 2>/dev/null))
     progress_bar="[${GREEN}${bar}${DIM}${empty_bar}${NC}] ${BOLD}${pct}%${NC}"
 
-    # UX FIX: Truncate lists to prevent FZF from getting pushed off-screen
     done_list=$(tail -n 4 "$DONE" | sed "s/^/ ${GREEN}✔${NC} /")
     hidden_done=$(( comp_count - 4 ))
     [ "$hidden_done" -gt 0 ] && done_list="$done_list\n ${DIM}...and $hidden_done older items${NC}"
@@ -330,11 +406,12 @@ $done_list$skip_section
 ${DIM} ───────────────────────────────────────────────────${NC}
  ${DIM}[Enter] Done │ [^P] Pomodoro │ [^A] Add │ [^E] Edit${NC}
  ${DIM}[^S] Skip    │ [^Z] Undo     │ [^X] Del │ [^H] Hist${NC}
- ${DIM}[?] Help     │ [^R] Reorder  │ [Esc] Quit${NC}
+ ${DIM}[^T] Stats   │ [^R] Reorder  │ [?] Help │ [Esc] Quit${NC}
+${DIM} ───────────────────────────────────────────────────${NC}
 EOF
 )
     output=$(fzf --ansi --header="$header" \
-        --expect=ctrl-p,ctrl-s,ctrl-e,ctrl-x,ctrl-a,ctrl-z,ctrl-r,ctrl-h,? \
+        --expect=ctrl-p,ctrl-s,ctrl-e,ctrl-x,ctrl-a,ctrl-z,ctrl-r,ctrl-h,ctrl-t,? \
         --prompt=" ❯ " --pointer="▶" --height=100% --reverse --info=hidden \
         --color=header:italic,prompt:cyan,pointer:green < "$TODO")
     
@@ -347,9 +424,8 @@ EOF
     case "$key" in
         "")       if is_valid_task; then echo "$task" >> "$DONE"; sync_todo; fi ;;
         ctrl-p)   
-            # Spawns Pomodoro in a detached foot terminal via systemd
             script_path=$(realpath "$0" 2>/dev/null || readlink -f "$0")
-            systemd-run --user --quiet foot -T apps-float-small "$script_path" --pomodoro 
+            systemd-run --user --quiet "$TERM_CMD" -T apps-float-small "$script_path" --pomodoro 
             ;; 
         ctrl-s)   if is_valid_task; then echo "$task" >> "$SKIP"; sync_todo; fi ;;
         ctrl-a) 
@@ -394,20 +470,73 @@ EOF
                 done
                 sync_todo
             fi ;;
-        ctrl-h)
-	       clear	
-            echo -e "7-DAY HISTORY \n" 
-            dates=$(awk '{print $1}' "$HIST" 2>/dev/null | sort -ru | head -n 7)
-            if [ -z "$dates" ]; then echo -e "  ${DIM}No history logged yet.${NC}"; else
+
+	ctrl-t)
+            show_analytics ;;
+
+	ctrl-h)
+            while true; do
+                # 1. Fetch dates and check if history exists
+                dates=$(awk '{print $1}' "$HIST" 2>/dev/null | sort -ru | head -n 30)
+                if [ -z "$dates" ]; then 
+                    clear
+                    echo -e "\n  ${DIM}No history logged yet.${NC}\n"
+                    read -n 1 -s -p " Press any key to return..." 
+                    break
+                fi
+                
+                # 2. Build the main history menu
+                menu_items=""
                 for d in $dates; do
-                    d_done=$(grep "^$d DONE" "$HIST" | wc -l)
-                    d_miss=$(grep "^$d MISSED" "$HIST" | wc -l)
-                    d_skip=$(grep "^$d SKIPPED" "$HIST" | wc -l)
-                    echo -e "  📅 ${CYAN}$d${NC} → ${GREEN}✔ $d_done Done${NC} │ ${RED}✖ $d_miss Missed${NC} │ ${DIM}⊘ $d_skip Skipped${NC}"
+                    d_done=$(grep -c "^$d DONE" "$HIST" || true)
+                    d_miss=$(grep -c "^$d MISSED" "$HIST" || true)
+                    d_skip=$(grep -c "^$d SKIPPED" "$HIST" || true)
+                    menu_items+="$d  │  ✔ $d_done Done  │  ✖ $d_miss Missed  │  ⊘ $d_skip Skipped\n"
                 done
-            fi
-            echo -e "\n Press [Enter] to return."
-            read -r ;;
+                
+                # 3. Display the date selection fzf window
+                hist_header=$(cat <<EOF
+${CYAN}╭───────────────────────────────────────────────────╮${NC}
+${CYAN}│                  HISTORY LOG                      │${NC}
+${CYAN}╰───────────────────────────────────────────────────╯${NC}
+EOF
+)
+                selected_line=$(echo -e -n "$menu_items" | fzf --prompt=" 📅 Select Date (Esc to exit) ❯ " \
+                    --pointer="▶" --height=100% --reverse \
+                    --header="$hist_header")
+                
+                # If Esc is pressed, exit the history loop and return to planner
+                [ -z "$selected_line" ] && break
+                
+                # 4. Extract date and build the drill-down view
+                selected_date=$(echo "$selected_line" | awk '{print $1}')
+                
+                day_details=$(awk -v d="$selected_date" \
+                                  -v c_green="$GREEN" -v c_red="$RED" -v c_dim="$DIM" -v c_nc="$NC" '
+                    $1 == d {
+                        status = $2
+                        # Remove date and status words to isolate the task string
+                        $1 = ""; $2 = ""; 
+                        sub(/^[ \t]+/, "")
+                        
+                        # Apply corresponding colors
+                        if (status == "DONE") print c_green "✔ DONE   " c_nc $0
+                        else if (status == "MISSED") print c_red "✖ MISSED " c_nc $0
+                        else if (status == "SKIPPED") print c_dim "⊘ SKIPPED" c_nc $0
+                    }
+                ' "$HIST")
+                
+                # 5. Display the tasks for the selected date
+                echo -e "$day_details" | fzf --ansi \
+                    --prompt=" ⏎ Press Enter/Esc to return to dates ❯ " \
+                    --pointer=" " --height=100% --reverse \
+                    --header=" 🔍 Details for $selected_date "
+            done
+            
+            # Re-draw the main interface cleanly after exiting history
+            clear
+            ;;
+
         "?") 
             clear
             echo -e "${CYAN}╭───────────────────────────────────────────────────╮${NC}"
@@ -416,6 +545,9 @@ EOF
             echo -e "\n${GREEN}🍅 Pomodoro Timer${NC}"
             echo -e "  Press [^P] to open the Pomodoro selector in a new"
             echo -e "  terminal window. It will run independently."
+	    echo -e "\n${GREEN}📊 Analytics & Streaks [^T]${NC}"
+            echo -e "  View your most completed, missed, and skipped tasks,"
+            echo -e "  along with your current multi-day streaks."
             echo -e "\n${GREEN}🏷️  Smart Tags${NC}"
             echo -e "  • ${DIM}@Mon, @Tue, @Wed...${NC} (Runs on specific days)"
             echo -e "  • ${DIM}@Weekday, @Weekend${NC}  (Runs on grouped days)"
