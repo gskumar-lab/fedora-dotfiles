@@ -130,3 +130,7 @@ extract() {
 eval "$(starship init bash)"
 
 eval "$(zoxide init --cmd cd bash)"
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/gskumar/.local/bin:$PATH"

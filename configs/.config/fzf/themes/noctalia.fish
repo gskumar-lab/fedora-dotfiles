@@ -1,19 +1,19 @@
 set -l fzf_theme_opts "\
---color=bg+:#41474d
---color=bg:#111416
---color=spinner:#e2e2e5
+--color=bg+:#45464e
+--color=bg:#131316
+--color=spinner:#e4e2e5
 --color=hl:#ffb4ab
---color=fg:#e2e2e5
+--color=fg:#e4e2e5
 --color=header:#ffb4ab
---color=info:#9dccf1
---color=pointer:#e2e2e5
---color=marker:#c1c7ce
---color=fg+:#e2e2e5
---color=prompt:#9dccf1
+--color=info:#b9c5f1
+--color=pointer:#e4e2e5
+--color=marker:#c6c6cf
+--color=fg+:#e4e2e5
+--color=prompt:#b9c5f1
 --color=hl+:#ffb4ab
---color=selected-bg:#41474d
---color=border:#41474d
---color=label:#e2e2e5"
+--color=selected-bg:#45464e
+--color=border:#45464e
+--color=label:#e4e2e5"
 
 if set -q FZF_DEFAULT_OPTS[1]; and test -n "$FZF_DEFAULT_OPTS"
     set -Ux FZF_DEFAULT_OPTS "$FZF_DEFAULT_OPTS

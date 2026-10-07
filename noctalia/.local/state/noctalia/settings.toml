@@ -76,6 +76,9 @@ type = "wallpaper"
 [[control_center.shortcuts]]
 type = "clipboard"
 
+[[control_center.shortcuts]]
+type = "baizhu/asus-gpu-mode:gpu-mode-shortcut"
+
 [desktop_widgets]
 enabled = false
 
@@ -151,6 +154,9 @@ widget_order = [ "lockscreen-login-box@eDP-1" ]
         show_unlock_hint = true
         show_weather = true
 
+[notification]
+layer = "overlay"
+
 [plugins]
 enabled = [
     "alexander/screen-toolkit",
@@ -159,7 +165,8 @@ enabled = [
     "nilsonlinux/world-radio",
     "blackbartblues/keymap",
     "kenn/keybind-cheatsheet",
-    "ezequiel/mango_layouts"
+    "ezequiel/mango_layouts",
+    "baizhu/asus-gpu-mode"
 ]
 
 [shell]
@@ -214,7 +221,6 @@ enabled = false
 [theme]
 builtin = "Tokyo-Night"
 community_palette = "Lilac AMOLED"
-mode = "dark"
 source = "wallpaper"
 
     [theme.templates]
@@ -244,20 +250,20 @@ transition_on_startup = true
     enabled = true
 
     [wallpaper.default]
-    path = "/home/gskumar/.config/backgrounds/colorful-neon-1920x1080-12553.jpg"
+    path = "/home/gskumar/.config/backgrounds/neon-lights-hallway-1920x1080-12525.jpg"
 
     [wallpaper.last]
-    path = "/home/gskumar/.config/backgrounds/colorful-neon-1920x1080-12553.jpg"
+    path = "/home/gskumar/.config/backgrounds/neon-lights-hallway-1920x1080-12525.jpg"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/gskumar/.config/backgrounds/colorful-neon-1920x1080-12553.jpg"
+    path = "/home/gskumar/.config/backgrounds/neon-lights-hallway-1920x1080-12525.jpg"
 
 [weather]
 enabled = false
 
 [widget.active_window]
 icon_size = 20
-max_length = 300
+max_length = 399
 
 [widget.clock]
 anchor = true

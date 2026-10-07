@@ -1,7 +1,7 @@
 # tuxedo config
 theme = Terminal
 density = comfortable
-sort = priority
+sort = due
 show_left = true
 show_right = true
 show_line_num = true

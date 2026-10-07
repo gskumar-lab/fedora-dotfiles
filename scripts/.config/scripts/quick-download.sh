@@ -44,11 +44,12 @@ if [[ "$1" == "--get-active" ]]; then
 fi
 
 if [[ "$1" == "--get-incomplete" ]]; then
-    PAUSED=$(curl -s --connect-timeout 1 -d '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.tellWaiting", "params":["token:qdl-secret-123", 0, 100]}' "http://localhost:6800/jsonrpc" | jq -r '.result[] | select(.status == "paused") | (if .files[0].path != "" then (.files[0].path | split("/") | last) else "Unknown" end) as $name | "[PAUSED] \(.gid) | \($name)"')
+   
+	PAUSED=$(curl -s --connect-timeout 1 -d '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.tellWaiting", "params":["token:qdl-secret-123", 0, 100]}' "http://localhost:6800/jsonrpc" | jq -r '.result[]? | select(.status == "paused") | (if (.files[0]?.path // "") != "" then (.files[0].path | split("/") | last) else "Unknown" end) as $name | "[PAUSED] \(.gid) | \($name)"')
+
+	FAILED=$(curl -s --connect-timeout 1 -d '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.tellStopped", "params":["token:qdl-secret-123", 0, 100]}' "http://localhost:6800/jsonrpc" | jq -r '.result[]? | select(.errorCode != "0") | (if (.files[0]?.path // "") != "" then (.files[0].path | split("/") | last) else "Unknown" end) as $name | "[ERROR] \(.gid) | \($name)"')
     
-    FAILED=$(curl -s --connect-timeout 1 -d '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.tellStopped", "params":["token:qdl-secret-123", 0, 100]}' "http://localhost:6800/jsonrpc" | jq -r '.result[] | select(.errorCode != "0") | (if .files[0].path != "" then (.files[0].path | split("/") | last) else "Unknown" end) as $name | "[ERROR] \(.gid) | \($name)"')
-    
-    CANCELED=$(awk '{print "[CANCELED] " $0}' "${XDG_DATA_HOME:-$HOME/.local/share}/qdl/canceled.txt" 2>/dev/null)
+    	CANCELED=$(awk '{print "[CANCELED] " $0}' "${XDG_DATA_HOME:-$HOME/.local/share}/qdl/canceled.txt" 2>/dev/null)
     
     [[ -n "$PAUSED" ]] && echo "$PAUSED"
     [[ -n "$FAILED" ]] && echo "$FAILED"
@@ -142,7 +143,7 @@ is_daemon_running() {
 }
 
 start_daemon() {
-    nohup aria2c --dir="$TEMP_DIR" \
+    setsid aria2c --dir="$TEMP_DIR" \
         --input-file="$SESSION_FILE" \
         --save-session="$SESSION_FILE" \
         --save-session-interval=10 \
@@ -226,7 +227,7 @@ while true; do
             if [[ "$ADDED_COUNT" -gt 0 ]]; then
                 echo -e "\n✔ Successfully added $ADDED_COUNT download(s) to the queue."
                 if command -v notify-send &> /dev/null; then
-                    notify-send "Quick Downloader" "Added $ADDED_COUNT download(s) to the queue." --icon=document-save
+                    notify-send -u low "Quick Downloader" "Added $ADDED_COUNT download(s) to the queue." --icon=document-save
                 fi
                 sleep 1.5
             else
@@ -261,14 +262,23 @@ while true; do
                             PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg gid "$GID" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.pause", "params":[$token, $gid]}')
                             curl -s -d "$PAYLOAD" "http://localhost:$RPC_PORT/jsonrpc" > /dev/null
                         elif [[ "$KEY" == "c" ]]; then
-                            INFO=$(curl -s -d '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.tellStatus", "params":["token:'"$RPC_SECRET"'", "'"$GID"'"]}' "http://localhost:$RPC_PORT/jsonrpc")
-                            T_URL=$(echo "$INFO" | jq -r '.result.files[0].uris[0].uri // empty')
                             
-                            if [ -z "$T_URL" ]; then
-                                T_NAME=$(echo "$INFO" | jq -r '(if .bittorrent.info.name then .bittorrent.info.name else (.files[0].path | split("/") | last) end)')
-                                T_URL=$(grep -iF "$T_NAME" "$HISTORY_FILE" | tail -n 1 | awk -F" | " '{print $NF}')
-                            fi
-                            
+			    INFO=$(curl -s -d '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.tellStatus", "params":["token:'"$RPC_SECRET"'", "'"$GID"'"]}' "http://localhost:$RPC_PORT/jsonrpc")
+
+			# Prevent parse errors by ensuring INFO is not empty
+			if [[ -n "$INFO" ]]; then
+    			# Add optional chaining (?) to safely navigate null paths
+    			T_URL=$(echo "$INFO" | jq -r '.result?.files?[0]?.uris?[0]?.uri // empty')
+    
+    			if [[ -z "$T_URL" ]]; then
+        			# Safely fall back to null-checked torrent names and paths
+        			T_NAME=$(echo "$INFO" | jq -r 'if .result?.bittorrent?.info?.name then .result.bittorrent.info.name elif (.result?.files?[0]?.path // "") != "" then (.result.files[0].path | split("/") | last) else empty end')
+        			if [[ -n "$T_NAME" ]]; then
+            				T_URL=$(grep -iF "$T_NAME" "$HISTORY_FILE" | tail -n 1 | awk -F" | " '{print $NF}')
+        			fi
+    			fi
+			fi
+
                             PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg gid "$GID" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.remove", "params":[$token, $gid]}')
                             curl -s -d "$PAYLOAD" "http://localhost:$RPC_PORT/jsonrpc" > /dev/null
                             
