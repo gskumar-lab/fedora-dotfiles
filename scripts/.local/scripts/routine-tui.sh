@@ -325,7 +325,7 @@ case "$1" in
         todo_count=$(grep -c "^" "$TODO" || true)
         if [ "$todo_count" -gt 0 ]; then
             if command -v notify-send &> /dev/null; then
-                action=$(notify-send -u critical -t 0 \
+                action=$(notify-send -u low -t 0 \
                     --action="open=Open Planner" \
                     "⏰ Routine Reminder" \
                     "You have $todo_count tasks left today!")

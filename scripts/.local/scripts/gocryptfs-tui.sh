@@ -132,8 +132,16 @@ do_open() {
         echo -e "\n${RED}Failed to unlock vault. Incorrect password?${NC}"
         sleep 2
     else
-	# Trigger success notification
-        command -v notify-send >/dev/null && notify-send -u low  "Vault Unlocked 🔓" "Your files are ready at $MOUNT_DIR"
+        # Trigger success notification with an action button in the background
+        if command -v notify-send >/dev/null; then
+            (
+                ACTION=$(notify-send -u low -A "open=Open Vault" "Vault Unlocked 🔓" "Your files are ready at $MOUNT_DIR")
+                if [ "$ACTION" = "open" ]; then
+                    xdg-open "$MOUNT_DIR" 2>/dev/null
+                fi
+            ) &
+        fi
+    
     fi
 }
 
@@ -221,11 +229,16 @@ while true; do
         echo -e "${YELLOW}(Closing this menu will automatically lock the vault)${NC}\n"
         echo "1) Lock & Quit"
         echo "2) Check Status"
+        echo "3) Open in File Manager"
         echo ""
         read -p "Select an option: " choice
         case "$choice" in
             1) exit 0 ;;
             2) do_status ;;
+            3)
+                nohup xdg-open "$MOUNT_DIR" >/dev/null 2>&1 &
+                sleep 1
+                ;;
             *) ;;
         esac
 
@@ -244,5 +257,3 @@ while true; do
         esac
     fi
 done
-
-
