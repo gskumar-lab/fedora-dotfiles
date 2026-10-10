@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Configuration
-CONFIG_FILE="$HOME/.config/scripts/tools.conf"
+CONFIG_FILE="$HOME/.config/gsk/tools-manager/tools.conf"
 TERMINAL="foot" # e.g., alacritty, kitty, gnome-terminal
 
 # Rofi appearance arguments

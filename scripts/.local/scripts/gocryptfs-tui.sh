@@ -5,7 +5,7 @@
 # ==========================================
 
 # Configuration File
-CONFIG_FILE="${HOME}/.config/scripts/gocryptfs-tui.conf"
+CONFIG_FILE="${HOME}/.config/gsk/gocryptfs-tui/gocryptfs-tui.conf"
 
 # Default Values
 CIPHER_DIR="${HOME}/.vault_cipher"

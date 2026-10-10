@@ -1,6 +1,6 @@
 #!/bin/bash
 
-list=~/.config/scripts/webapps.list
+list=~/.config/gsk/webapps/webapps.list
 
 choice=$(cut -d'|' -f1 "$list" | rofi -dmenu -i -p "WebApps" \
 -theme-str '

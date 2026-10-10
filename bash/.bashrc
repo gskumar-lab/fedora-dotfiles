@@ -6,7 +6,7 @@ if [ -f /etc/bashrc ]; then
 fi
 
 # User PATH
-export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.cargo/bin:$HOME/.local/scripts:$PATH"
 export TODO_DIR="$HOME"
 
 # Uncomment the following line if you don't like systemctl's auto-paging feature:

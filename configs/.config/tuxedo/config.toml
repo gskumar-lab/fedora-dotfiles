@@ -1,5 +1,5 @@
 # tuxedo config
-theme = Terminal
+theme = Muted Slate
 density = comfortable
 sort = due
 show_left = true

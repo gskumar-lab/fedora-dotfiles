@@ -91,27 +91,30 @@ hl.bind(mainMod .. " + Z", hl.dsp.exec_cmd(launchPrefix .. "zen-browser --new-wi
 hl.bind(mainMod .. " + ALT + Z", hl.dsp.exec_cmd(launchPrefix .. "zen-browser --private-window")) --| Browser incognito - zen browser
 hl.bind(mainMod .. " + S", hl.dsp.exec_cmd(noctCall .. "settings-toggle")) --| Noctalia settings
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd(noctCall .. "panel-toggle control-center")) --| Noctalia control center
-hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd(noctCall .. "panel-toggle launcher")) --| App launcher
+hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd(noctCall .. "panel-toggle launcher")) --| Noctalia App launcher
+hl.bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd(launchPrefix .. "fuzzel")) --| fuzzel App launcher
 hl.bind(mainMod .. " + period", hl.dsp.exec_cmd(noctCall .. "panel-toggle launcher /emo")) --| Emoji
 hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(noctCall .. "session lock")) --| Lock session
 hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd(noctCall .. "panel-toggle session")) --| Power menu
 hl.bind(mainMod .. " + Y", hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-large -e yazi ")) --| Yazi file manager
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd(launchPrefix .. "super-productivity")) --| Super productivity
-hl.bind(" ALT + Space", hl.dsp.exec_cmd(launchPrefix .. "~/.config/scripts/tools-manager.sh")) --| Tool manager
---hl.bind(" ALT + Z ", hl.dsp.exec_cmd(launchPrefix .. "voxtype record toggle")) --| voice dictate
-hl.bind(" CONTROL + Space ", hl.dsp.exec_cmd(launchPrefix .. "handy --toggle-transcription")) --| voice dictate
-hl.bind(mainMod .. " + W", hl.dsp.exec_cmd(launchPrefix .. "~/.config/scripts/webapps-launcher.sh")) --| Webapps launcher
+hl.bind(" ALT + Space", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/tools-manager.sh")) --| Tool manager
+hl.bind(mainMod .. " + W", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/webapps-launcher.sh")) --| Webapps launcher
 hl.bind(mainMod .. " + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-large -e ~/.cargo/bin/tuxedo")) --| Tuxedo todo
---hl.bind(mainMod .. " + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.config/scripts/view-notes.sh")) --| View Quick notes
-hl.bind(mainMod .. " + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.config/scripts/integrated-notetaker.sh -v")) --| View Quick notes
-hl.bind(mainMod .. " + M ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-large -e ~/.config/scripts/integrated-notetaker.sh")) --| Integrated Markdown notetaker
-hl.bind(mainMod .. " + ALT + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.config/scripts/quicktodo.sh")) --| Quick todo
---hl.bind(mainMod .. " + ALT + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.config/scripts/quicknote.sh")) --| Quick note
-hl.bind(mainMod .. " + ALT + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.config/scripts/integrated-notetaker.sh -q")) --| Quick note
-hl.bind(mainMod .. " + ALT + R ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.config/scripts/quickreminder.sh")) --| Quick reminder
-hl.bind(mainMod .. " + ALT + D ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.config/scripts/quick-download.sh")) --| Quick downloader
-hl.bind(mainMod .. " + ALT + H ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.config/scripts/routine-tui.sh")) --| Habit/Routine tracker
-hl.bind(mainMod .. " + K", hl.dsp.exec_cmd(launchPrefix .. "~/.config/scripts/hypr-binds.sh")) --| Keybinds - shortcuts
+--hl.bind(mainMod .. " + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.local/scripts/view-notes.sh")) --| View Quick notes
+--hl.bind(mainMod .. " + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.local/scripts/integrated-notetaker.sh -v")) --| View Quick notes
+hl.bind(mainMod .. " + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-large -e ~/.local/scripts/integrated-notetaker.sh")) --| Integrated Markdown notetaker
+hl.bind(mainMod .. " + ALT + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.local/scripts/quicktodo.sh")) --| Quick todo
+hl.bind(mainMod .. " + ALT + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.local/scripts/integrated-notetaker.sh -q")) --| Quick note
+hl.bind(mainMod .. " + ALT + R ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.local/scripts/quickreminder.sh")) --| Quick reminder
+hl.bind(mainMod .. " + ALT + D ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.local/scripts/quick-download.sh")) --| Quick downloader
+hl.bind(mainMod .. " + H ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.local/scripts/routine-tui.sh")) --| Habit/Routine tracker
+hl.bind(mainMod .. " + ALT + H ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.local/scripts/routine-tui.sh --pomodoro")) --| Habit/Routine pomodoro 
+hl.bind(mainMod .. " + K", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/hypr-binds-fuzzel.sh")) --| Keybinds - shortcuts
+hl.bind(mainMod .. " + M", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/toggle-mic.sh --mic-ee")) --| toggle mic + easy effects
+hl.bind(mainMod .. " + ALT + M", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/toggle-mic.sh --all")) --| toggle mic + easy effects + handy
+hl.bind(" CONTROL + Space ", hl.dsp.exec_cmd(launchPrefix .. "handy --toggle-transcription")) --| voice dictate
+--hl.bind(" ALT + Z ", hl.dsp.exec_cmd(launchPrefix .. "voxtype record toggle")) --| voice dictate
 
 ---------------------------
 ---- HARDWARE CONTROLS ----

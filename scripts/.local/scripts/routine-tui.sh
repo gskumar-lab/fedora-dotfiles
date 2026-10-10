@@ -5,6 +5,9 @@
 # ==========================================
 command -v fzf >/dev/null 2>&1 || { echo -e "\033[1;31mError:\033[0m 'fzf' is not installed. Please install it to use this planner."; exit 1; }
 
+# Disable terminal flow control so Ctrl-S can be passed to FZF
+stty -ixon 2>/dev/null
+
 SCRIPT_PATH=$(realpath "$0" 2>/dev/null || readlink -f "$0")
 SCRIPT_NAME=$(basename "$SCRIPT_PATH")
 # Use environment TERMINAL if set, otherwise fallback to foot
@@ -382,15 +385,17 @@ while true; do
 
     done_list=$(tail -n 4 "$DONE" | sed "s/^/ ${GREEN}✔${NC} /")
     hidden_done=$(( comp_count - 4 ))
-    [ "$hidden_done" -gt 0 ] && done_list="$done_list\n ${DIM}...and $hidden_done older items${NC}"
+    # FIXED: Replaced \n with $'\n'
+    [ "$hidden_done" -gt 0 ] && done_list="${done_list}"$'\n'" ${DIM}...and $hidden_done older items${NC}"
     [ -z "$done_list" ] && done_list=" ${DIM}(No tasks completed yet)${NC}"
 
     skip_section=""
     if [ -s "$SKIP" ]; then
         skip_list=$(tail -n 2 "$SKIP" | sed "s/^/ ${DIM}⊘${NC} /")
         hidden_skip=$(( skip_count - 2 ))
-        [ "$hidden_skip" -gt 0 ] && skip_list="$skip_list\n ${DIM}...and $hidden_skip older items${NC}"
-        skip_section=$'\n\n'"${DIM} Skipped:${NC}\n$skip_list"
+        # FIXED: Replaced \n with $'\n'
+        [ "$hidden_skip" -gt 0 ] && skip_list="${skip_list}"$'\n'" ${DIM}...and $hidden_skip older items${NC}"
+        skip_section=$'\n\n'"${DIM} Skipped:${NC}"$'\n'"$skip_list"
     fi
 
     header=$(cat <<EOF

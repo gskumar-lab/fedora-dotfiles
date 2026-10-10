@@ -6,7 +6,7 @@ ui_scale = 1.2500000111758709
 [bar.default]
 background_opacity = 0.89999997988343239
 capsule_thickness = 0.69999998807907104
-center = [ "notifications", "toggle", "clock", "group:g1", "widget_2", "radio" ]
+center = [ "notifications", "toggle", "clock", "group:g1", "widget", "widget_2", "radio" ]
 end = [ "group:g3", "group:g4", "group:g2" ]
 font_family = "Adwaita Sans"
 font_scale = 1.1999999806284904
@@ -24,16 +24,18 @@ widget_spacing = 10
     [[bar.default.capsule_group]]
     accordion = true
     accordion_direction = "end"
+    border_width = 1.0
     enabled = true
     fill = "surface_variant"
     id = "g1"
-    members = [ "caffeine", "widget" ]
+    members = [ "caffeine", "ocr" ]
     opacity = 1.0
     padding = 6.0
 
     [[bar.default.capsule_group]]
     accordion = false
     accordion_direction = "end"
+    border_width = 1.0
     enabled = true
     fill = "surface_variant"
     id = "g2"
@@ -44,6 +46,7 @@ widget_spacing = 10
     [[bar.default.capsule_group]]
     accordion = false
     accordion_direction = "end"
+    border_width = 1.0
     enabled = true
     fill = "surface_variant"
     id = "g3"
@@ -54,6 +57,7 @@ widget_spacing = 10
     [[bar.default.capsule_group]]
     accordion = false
     accordion_direction = "end"
+    border_width = 1.0
     enabled = true
     fill = "surface_variant"
     id = "g4"
@@ -84,7 +88,7 @@ enabled = false
 
 [dock]
 auto_hide = true
-enabled = false
+enabled = true
 launcher_position = "start"
 pinned = [ "brave-origin", "app.zen_browser.zen", "pcmanfm", "org.kde.dolphin" ]
 reserve_space = false
@@ -158,16 +162,7 @@ widget_order = [ "lockscreen-login-box@eDP-1" ]
 layer = "overlay"
 
 [plugins]
-enabled = [
-    "alexander/screen-toolkit",
-    "maddingo/hypr-layout-switcher",
-    "thepunkoff/pomodoro",
-    "nilsonlinux/world-radio",
-    "blackbartblues/keymap",
-    "kenn/keybind-cheatsheet",
-    "ezequiel/mango_layouts",
-    "baizhu/asus-gpu-mode"
-]
+enabled = [ "maddingo/hypr-layout-switcher", "thepunkoff/pomodoro", "fel/ocr" ]
 
 [shell]
 font_family = "JetBrainsMono Nerd Font Propo"
@@ -230,6 +225,7 @@ source = "wallpaper"
         "zen-browser",
         "telegram",
         "neovim",
+        "fuzzel",
         "rofi",
         "fastfetch",
         "hyprtoolkit",
@@ -250,13 +246,13 @@ transition_on_startup = true
     enabled = true
 
     [wallpaper.default]
-    path = "/home/gskumar/.config/backgrounds/horizon.jpg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-pkxlg3_1920x1080.jpeg"
 
     [wallpaper.last]
-    path = "/home/gskumar/.config/backgrounds/horizon.jpg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-pkxlg3_1920x1080.jpeg"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/gskumar/.config/backgrounds/horizon.jpg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-pkxlg3_1920x1080.jpeg"
 
 [weather]
 enabled = false
@@ -285,6 +281,9 @@ vpn_status = "both"
 
 [widget.notifications]
 hide_when_no_unread = true
+
+[widget.ocr]
+type = "fel/ocr:ocr"
 
 [widget.radio]
 type = "nilsonlinux/world-radio:radio"
