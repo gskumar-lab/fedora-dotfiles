@@ -5,7 +5,7 @@
 # CONFIGURATION
 # ==========================================
 NOTES_DIR="${NOTES_DIR:-$HOME/Notes}"
-QUICK_NOTES_FILE="$HOME/notes.txt"
+QUICK_NOTES_FILE="$NOTES_DIR/quick-notes.txt"
 EDITOR="${EDITOR:-vim}"
 EXT=".md"
 
@@ -110,6 +110,130 @@ cmd_view_quicknotes() {
   fi
 }
 
+cmd_sync() {
+  clear
+  local auto_mode=$1
+  if [ "$auto_mode" != "--auto" ]; then
+    clear
+  fi
+  local CYAN='\033[1;36m'
+  local GREEN='\033[1;32m'
+  local RED='\033[1;31m'
+  local YELLOW='\033[1;33m'
+  local NC='\033[0m'
+
+  echo -e "${CYAN}╭────────────────────────────────────────────╮${NC}"
+  echo -e "${CYAN}│             🔄 SYNCING TO GIT              │${NC}"
+  echo -e "${CYAN}╰────────────────────────────────────────────╯${NC}\n"
+
+  # Ensure we are in the main vault directory
+  cd "$NOTES_DIR" || return
+
+  # --- 1. INITIAL GIT SETUP ---
+  if [ ! -d ".git" ]; then
+    echo -e "${YELLOW}⚠ Git repository not initialized in $NOTES_DIR.${NC}"
+    read -e -p "Would you like to initialize it now? (y/N): " init_ans
+    
+    if [[ "$init_ans" =~ ^[Yy]$ ]]; then
+      echo -e "\n• Initializing repository..."
+      git init
+      git branch -M main
+      
+      echo -e "\n${CYAN}To sync across devices, you need a remote repository (e.g., GitHub, GitLab).${NC}"
+      echo -e "${CYAN}Format: git@github.com:username/repo.git or https://...${NC}"
+      read -e -p "Enter remote URL (or press [ENTER] for local-only): " remote_url
+      
+      git add .
+      git commit -m "Initial commit" >/dev/null
+      
+      if [ -n "$remote_url" ]; then
+        git remote add origin "$remote_url"
+        echo "• Pushing initial commit to remote..."
+        if git push -u origin main >/dev/null 2>&1; then
+           echo -e "${GREEN}✔ Initial setup and push complete!${NC}\n"
+        else
+           echo -e "${RED}✖ Push failed. Check your URL, network, or SSH keys.${NC}\n"
+        fi
+      else
+        echo -e "${GREEN}✔ Local Git initialization complete (no remote added).${NC}\n"
+      fi
+    else
+      echo "Sync cancelled."
+    fi
+    
+    read -p "Press [ENTER] to return to menu..."
+    return
+  fi
+
+  # --- 2. STANDARD SYNC (Runs if already initialized) ---
+  git add .
+  
+  if git diff-index --quiet HEAD --; then
+    echo "• No local changes to commit."
+  else
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    git commit -m "sync: auto-update $timestamp" >/dev/null
+    echo "• Committed local changes."
+  fi
+
+  # Only attempt network operations if a remote is configured
+  # Uses generic match in case remote is named something other than 'origin'
+  if git remote | grep -q '.'; then
+    local current_branch
+    # Attempt to get the current branch name safely
+    current_branch=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+
+    # Default to main if detached or empty
+    if [ -z "$current_branch" ] || [ "$current_branch" = "HEAD" ]; then
+        current_branch="main"
+    fi
+
+    # Assume 'origin' is the default remote for syncing
+    local remote_name="origin"
+
+    echo "• Pulling remote changes..."
+    # Specify remote and branch explicitly to avoid missing upstream errors
+    if git pull --rebase "$remote_name" "$current_branch" >/dev/null 2>&1; then
+      echo -e "${GREEN}✔ Pull successful.${NC}"
+    else
+      echo -e "${RED}✖ Pull failed. You may have merge conflicts.${NC}"
+      read -p "Press [ENTER] to continue..."
+      return
+    fi
+
+    echo "• Pushing to remote..."
+    # Use -u to ensure upstream tracking is set for this branch
+    if git push -u "$remote_name" "$current_branch" >/dev/null 2>&1; then
+      echo -e "\n${GREEN}✔ Sync complete!${NC}\n"
+    else
+      echo -e "\n${RED}✖ Push failed. Check your remote/network.${NC}\n"
+    fi
+  else
+    echo -e "\n${GREEN}✔ Saved locally (no remote configured).${NC}\n"
+  fi
+	
+  if [ "$auto_mode" != "--auto" ]; then
+    read -p "Press [ENTER] to return to menu..."
+  else
+    sleep 0.5   #Gives you a brief moment to see the success message before closing
+  fi
+}
+
+cmd_toggle_autosync() {
+  clear
+  local config_file="$NOTES_DIR/.autosync"
+  
+  if [ -f "$config_file" ] && grep -q "true" "$config_file"; then
+    echo "false" > "$config_file"
+    echo -e "\033[1;33m⏸ Auto-sync on exit is now DISABLED.\033[0m"
+  else
+    echo "true" > "$config_file"
+    echo -e "\033[1;32m▶ Auto-sync on exit is now ENABLED.\033[0m"
+  fi
+  
+  sleep 1.5
+}
+
 # ==========================================
 # HELP & REFERENCE SYSTEM
 # ==========================================
@@ -143,6 +267,7 @@ cmd_help() {
   echo -e "  • ${BOLD}Quick Note:${NC}    Appends single-line timestamped notes to $QUICK_NOTES_FILE."
   echo -e "  • ${BOLD}View Quick:${NC}    Search quick notes. [ENTER] copies to clipboard (wl-copy)."
   echo -e "                   [CTRL-E] edits file. [CTRL-D] deletes selected quick note."
+  echo -e "  • ${BOLD}Sync Notes:${NC}    Initializes Git, commits changes, and syncs with remote."
   echo -e "  • ${BOLD}Delete Note:${NC}   Multi-select markdown files via [TAB] to delete."
 
   echo -e "\n${CYAN}======================================================${NC}\n"
@@ -328,7 +453,12 @@ mkdir -p "$NOTES_DIR"
 cd "$NOTES_DIR" || exit 1
 
 while true; do
-  choice=$(printf "📝 New Note\n📖 Read Note\n🔍 Search Notes\n🏷️ Browse by Tag\n⚡ Add Quick Note\n📜 View Quick Notes\n🗑️ Delete Note(s)\n❓ Help / Info\n❌ Quit" |
+	# Check current auto-sync status for the menu display
+  	sync_status="Off"
+  	if [ -f "$NOTES_DIR/.autosync" ] && grep -q "true" "$NOTES_DIR/.autosync"; then
+    		sync_status="On"
+  	fi
+  choice=$(printf "📝 New Note\n📖 Read Note\n🔍 Search Notes\n🏷️ Browse by Tag\n⚡ Add Quick Note\n📜 View Quick Notes\n🔄 Sync Notes Now\n⚙️ Toggle Auto-Sync: [$sync_status]\n🗑️ Delete Note(s)\n❓ Help / Info\n❌ Quit" |
     fzf --prompt="Menu> " \
       --layout=reverse \
       --border=rounded \
@@ -345,9 +475,16 @@ while true; do
   "🏷️ Browse by Tag") cmd_tags ;;
   "⚡ Add Quick Note") cmd_quicknote ;;
   "📜 View Quick Notes") cmd_view_quicknotes ;;
+  "🔄 Sync Notes Now") cmd_sync ;;
+  "⚙️ Toggle Auto-Sync: "*) cmd_toggle_autosync ;;
   "🗑️ Delete Note(s)") cmd_delete ;;
   "❓ Help / Info") cmd_help ;;
   "❌ Quit" | "")
+    clear
+    if [ "$sync_status" = "On" ]; then
+      echo -e "\033[1;36m🔄 Auto-syncing before exit...\033[0m"
+      cmd_sync --auto
+    fi
     clear
     exit 0
     ;;

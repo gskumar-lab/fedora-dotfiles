@@ -8,6 +8,7 @@ image/jpeg=feh.desktop;com.brave.Origin.desktop;brave-origin.desktop;
 image/png=feh.desktop;com.brave.Origin.desktop;brave-origin.desktop;
 image/webp=feh.desktop;com.brave.Origin.desktop;app.zen_browser.zen.desktop;
 text/markdown=geany.desktop;org.onlyoffice.desktopeditors.desktop;
+text/plain=geany.desktop;nvim.desktop;org.onlyoffice.desktopeditors.desktop;
 video/webm=mpv.desktop;app.zen_browser.zen.desktop;
 
 [Default Applications]
@@ -21,6 +22,7 @@ image/png=feh.desktop;
 image/webp=feh.desktop;
 text/html=brave-origin.desktop
 text/markdown=geany.desktop;
+text/plain=geany.desktop;
 video/webm=mpv.desktop;
 x-scheme-handler/about=brave-origin.desktop
 x-scheme-handler/http=brave-origin.desktop

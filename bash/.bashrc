@@ -74,7 +74,8 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 
 # Safety nets (prompts before overwriting or deleting files)
-alias rm='rm -i'
+alias rm='trash'
+#alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 

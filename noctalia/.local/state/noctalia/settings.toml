@@ -6,7 +6,7 @@ ui_scale = 1.2500000111758709
 [bar.default]
 background_opacity = 0.89999997988343239
 capsule_thickness = 0.69999998807907104
-center = [ "notifications", "toggle", "clock", "group:g1", "widget_2", "radio" ]
+center = [ "notifications", "toggle", "clock", "group:g1", "widget_2", "radio", "widget" ]
 end = [ "group:g3", "group:g4", "group:g2" ]
 font_family = "Adwaita Sans"
 font_scale = 1.1999999806284904
@@ -98,7 +98,6 @@ show_dots = true
 battery_charging = "noctalia msg power-set balanced"
 battery_discharging = "noctalia msg power-set power-saver"
 battery_plugged = "noctalia msg power-set balanced"
-session_unlocked = "notify-send \"Welcome Back\" -u low"
 
 [idle]
 behavior_order = [ "screen-off", "lock", "lock-and-suspend" ]
@@ -168,6 +167,7 @@ hyprland_lua_config = "~/.config/hypr/config/binds.lua"
 enabled = [ "maddingo/hypr-layout-switcher", "thepunkoff/pomodoro", "fel/ocr", "nilsonlinux/world-radio" ]
 
 [shell]
+clipboard_history_max_entries = 50
 font_family = "JetBrainsMono Nerd Font Propo"
 polkit_agent = true
 time_format = "%I:%M %p"
@@ -249,13 +249,13 @@ transition_on_startup = true
     enabled = true
 
     [wallpaper.default]
-    path = "/home/gskumar/.config/backgrounds/the-batman-2022-movies-red-background-dark-background-dc-1920x1080-7414.jpg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-k8dmwm_1920x1080.jpeg"
 
     [wallpaper.last]
-    path = "/home/gskumar/.config/backgrounds/the-batman-2022-movies-red-background-dark-background-dc-1920x1080-7414.jpg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-k8dmwm_1920x1080.jpeg"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/gskumar/.config/backgrounds/the-batman-2022-movies-red-background-dark-background-dc-1920x1080-7414.jpg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-k8dmwm_1920x1080.jpeg"
 
 [weather]
 enabled = false
@@ -293,6 +293,9 @@ type = "nilsonlinux/world-radio:radio"
 
 [widget.toggle]
 type = "maddingo/hypr-layout-switcher:toggle"
+
+[widget.widget]
+type = "alexander/screen-toolkit:widget"
 
 [widget.widget_2]
 type = "thepunkoff/pomodoro:widget"
