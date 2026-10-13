@@ -100,11 +100,14 @@ hl.bind(mainMod .. " + Y", hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd(launchPrefix .. "super-productivity")) --| Super productivity
 hl.bind(" ALT + Space", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/tools-manager.sh")) --| Tool manager
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/webapps-launcher.sh")) --| Webapps launcher
-hl.bind(mainMod .. " + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-large -e ~/.cargo/bin/tuxedo")) --| Tuxedo todo
+--hl.bind(mainMod .. " + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-large -e ~/.cargo/bin/tuxedo")) --| Tuxedo todo
+--hl.bind(mainMod .. " + ALT + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.local/scripts/quicktodo.sh")) --| Quick todo
+hl.bind(mainMod .. " + CTRL + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-large -e ~/.local/scripts/tuxedo-wrapper.sh")) --| Tuxedo wrapper
+hl.bind(mainMod .. " + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-large -e ~/.local/scripts/tuxedo-wrapper.sh -l")) --| Tuxedo todo
+hl.bind(mainMod .. " + ALT + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.local/scripts/tuxedo-wrapper.sh -a")) --| Quick todo
 --hl.bind(mainMod .. " + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.local/scripts/view-notes.sh")) --| View Quick notes
 --hl.bind(mainMod .. " + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.local/scripts/integrated-notetaker.sh -v")) --| View Quick notes
 hl.bind(mainMod .. " + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-large -e ~/.local/scripts/integrated-notetaker.sh")) --| Integrated Markdown notetaker
-hl.bind(mainMod .. " + ALT + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.local/scripts/quicktodo.sh")) --| Quick todo
 hl.bind(mainMod .. " + ALT + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.local/scripts/integrated-notetaker.sh -q")) --| Quick note
 hl.bind(mainMod .. " + ALT + R ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-small -e ~/.local/scripts/quickreminder.sh")) --| Quick reminder
 hl.bind(mainMod .. " + ALT + D ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " --title apps-float-medium -e ~/.local/scripts/quick-download.sh")) --| Quick downloader

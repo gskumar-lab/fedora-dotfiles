@@ -14,7 +14,7 @@ action=$(
 
 case "$action" in
     update)
-        foot -e topgrade
+        systemd-run --user --quiet foot -e topgrade
         ;;
 esac
 
