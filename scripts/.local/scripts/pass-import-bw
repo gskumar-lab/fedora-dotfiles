@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""
+pass-import-bw: Import Bitwarden JSON export directly into standard UNIX pass.
+Supports multiline notes, custom fields, URLs, OTP/totp, and subfolders.
+"""
+
+import json
+import os
+import subprocess
+import sys
+
+def sanitize_component(name: str) -> str:
+    """Sanitize individual path segments to prevent invalid directory nesting."""
+    if not name:
+        return "unnamed"
+    return str(name).replace("/", "-").strip()
+
+def main():
+    if len(sys.argv) < 2:
+        print(f"Usage: {sys.argv[0]} <bitwarden_export.json>")
+        sys.exit(1)
+
+    export_path = os.path.expanduser(sys.argv[1])
+    if not os.path.isfile(export_path):
+        print(f"Error: File '{export_path}' not found.")
+        sys.exit(1)
+
+    try:
+        with open(export_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Failed to read/parse JSON: {e}")
+        sys.exit(1)
+
+    folders = {f["id"]: sanitize_component(f.get("name")) for f in data.get("folders", []) if "id" in f}
+    items = data.get("items", [])
+    total_items = len(items)
+    imported = 0
+    skipped = 0
+
+    prefix = os.environ.get("PASSWORD_STORE_DIR", os.path.expanduser("~/.password-store"))
+    # Disable pass's auto-commit per item to keep import fast
+    env = os.environ.copy()
+    env["PASSWORD_STORE_GIT"] = "0"
+
+    print(f"Starting import of {total_items} items into '{prefix}'...\n")
+
+    for item in items:
+        # Type 1 = Login item in Bitwarden
+        if item.get("type") != 1:
+            skipped += 1
+            continue
+
+        item_name = sanitize_component(item.get("name"))
+        folder_id = item.get("folderId")
+
+        if folder_id and folder_id in folders:
+            pass_path = f"{folders[folder_id]}/{item_name}"
+        else:
+            pass_path = item_name
+
+        login_data = item.get("login") or {}
+        password = login_data.get("password") or ""
+
+        # Line 1: Password (mandatory for pass / pass -c convention)
+        lines = [password]
+
+        if login_data.get("username"):
+            lines.append(f"Username: {login_data['username']}")
+
+        for uri in login_data.get("uris", []):
+            if uri.get("uri"):
+                lines.append(f"URL: {uri['uri']}")
+
+        # standard pass-otp extension format
+        if login_data.get("totp"):
+            lines.append(f"totp: {login_data['totp']}")
+
+        for field in item.get("fields", []):
+            fname = field.get("name")
+            fval = field.get("value")
+            if fname and fval is not None:
+                lines.append(f"{fname}: {fval}")
+
+        notes = item.get("notes")
+        if notes:
+            lines.append(f"Notes:\n{notes}")
+
+        payload = "\n".join(lines) + "\n"
+
+        proc = subprocess.run(
+            ["pass", "insert", "-m", "-f", pass_path],
+            input=payload,
+            text=True,
+            capture_output=True,
+            env=env
+        )
+
+        if proc.returncode == 0:
+            imported += 1
+            print(f"  [OK] {pass_path}")
+        else:
+            print(f"  [ERROR] {pass_path}: {proc.stderr.strip()}")
+
+    # Perform a single consolidated Git commit if repository exists
+    git_dir = os.path.join(prefix, ".git")
+    if os.path.isdir(git_dir) and imported > 0:
+        print("\nCommitting changes to Git repository...")
+        subprocess.run(["git", "-C", prefix, "add", "-A"], check=False)
+        subprocess.run(
+            ["git", "-C", prefix, "commit", "-m", f"Import {imported} items from Bitwarden"],
+            check=False
+        )
+
+    print(f"\nCompleted: {imported} imported, {skipped} skipped.")
+
+if __name__ == "__main__":
+    main()
+

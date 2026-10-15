@@ -13,24 +13,24 @@ windowSubTextFg: #919191; // Minor text
 windowSubTextFgOver: #919191; // Minor text on hover
 windowBoldFg: #e2e2e2; // Bold text
 windowBoldFgOver: #c6c6c6; // Bold text on hover
-windowBgActive: #a9c7ff; // Active items background
-windowFgActive: #003063; // Active items text
-windowActiveTextFg: #a9c7ff; // Active items text
+windowBgActive: #c1c1ff; // Active items background
+windowFgActive: #252478; // Active items text
+windowActiveTextFg: #c1c1ff; // Active items text
 windowShadowFg: #000000; // Window shadow
 windowShadowFgFallback: #000000; // Fallback for shadow
-historyOutIconFg: #a9c7ff;
+historyOutIconFg: #c1c1ff;
 historyIconFgInverted: #e2e2e2;
 
 msgServiceBg: #474747;
-msgServiceBgSelected: #3e4759;
+msgServiceBgSelected: #454559;
 msgServiceFg: #e2e2e2;
 historyUnreadBarBg: #474747; // Unread messages banner background
 historyUnreadBarFg: #e2e2e2; // Unread messages banner text
 historyUnreadBarBorder: #00000000; // Unread messages banner border
 botKbBg: #474747; // Inline bot keyboard button background
-botKbDownBg: #3e4759; // Inline bot keyboard button pressed
+botKbDownBg: #454559; // Inline bot keyboard button pressed
 msgBotKbIconFg: #c6c6c6; // Inline bot keyboard button icon
-msgOutBg: #3e4759;
+msgOutBg: #454559;
 msgOutBgSelected: #2a2a2a;
 msgOutServiceFg: #e2e2e2;
 historyTextOutFg: #e2e2e2; // Outgoing bubble text
@@ -38,9 +38,9 @@ msgOutDateFg: #e2e2e2;
 historySentIconFg: #e2e2e2;
 msgOutDateFgSelected: #e2e2e2;
 msgDateImgFg: #e2e2e2;
-dialogsSentIconFg: #a9c7ff;
-dialogsSentIconFgOver: #a9c7ff;
-dialogsOnlineBadgeFg: #a9c7ff;
+dialogsSentIconFg: #c1c1ff;
+dialogsSentIconFgOver: #c1c1ff;
+dialogsOnlineBadgeFg: #c1c1ff;
 
 
 shadowFg: #000000; // General shadow
@@ -50,15 +50,15 @@ slideFadeOutShadowFg: #000000;
 imageBg: #131313;
 imageBgTransparent: #131313;
 
-activeButtonBg: #a9c7ff; // Active button background
-activeButtonBgOver: #00468c; // Active button hover background
-activeButtonBgRipple: #d6e3ff; // Active button ripple
-activeButtonFg: #003063; // Active button text
-activeButtonFgOver: #d6e3ff; // Active button hover text
-activeButtonSecondaryFg: #003063; // Active button secondary text
-activeButtonSecondaryFgOver: #d6e3ff; // Active button secondary hover text
+activeButtonBg: #c1c1ff; // Active button background
+activeButtonBgOver: #3c3d8f; // Active button hover background
+activeButtonBgRipple: #e1dfff; // Active button ripple
+activeButtonFg: #252478; // Active button text
+activeButtonFgOver: #e1dfff; // Active button hover text
+activeButtonSecondaryFg: #252478; // Active button secondary text
+activeButtonSecondaryFgOver: #e1dfff; // Active button secondary hover text
 activeLineFg: #e2e2e2;
-dialogsBgActive: #3e4759;
+dialogsBgActive: #454559;
 dialogsNameFg: #e2e2e2; // Chat list name text
 dialogsNameFgActive: #e2e2e2; // Selected chat name text (same as bubble text)
 dialogsTextFgActive: #e2e2e2; // Selected chat preview text (same as bubble text)
@@ -67,17 +67,17 @@ sideBarBg: #0e0e0e; // Filters side bar background
 sideBarBgActive: #1f1f1f; // Filters side bar active background
 sideBarBgRipple: #1b1b1b; // Filters side bar ripple effect
 sideBarTextFg: #919191; // Filters side bar text
-sideBarTextFgActive: #a9c7ff; // Filters side bar active item text
+sideBarTextFgActive: #c1c1ff; // Filters side bar active item text
 sideBarIconFg: #919191; // Filters side bar icon
-sideBarIconFgActive: #a9c7ff; // Filters side bar active item icon
-sideBarBadgeBg: #a9c7ff; // Filters side bar badge background
+sideBarIconFgActive: #c1c1ff; // Filters side bar active item icon
+sideBarBadgeBg: #c1c1ff; // Filters side bar badge background
 sideBarBadgeBgMuted: #919191; // Filters side bar muted badge background
-sideBarBadgeFg: #003063; // Filters side bar badge text
+sideBarBadgeFg: #252478; // Filters side bar badge text
 
 
 lightButtonBg: #131313; // Light button background
 lightButtonBgOver: #474747; // Light button hover background
-lightButtonBgRipple: #a9c7ff; // Light button ripple
+lightButtonBgRipple: #c1c1ff; // Light button ripple
 lightButtonFg: #e2e2e2; // Light button text
 lightButtonFgOver: #c6c6c6; // Light button hover text
 
@@ -88,20 +88,20 @@ attentionButtonBgRipple: #ffdad6;
 
 outlineButtonBg: #131313; // Outline button background
 outlineButtonBgOver: #474747; // Outline button hover background
-outlineButtonOutlineFg: #a9c7ff; // Outline button color
-outlineButtonBgRipple: #a9c7ff; // Outline button ripple
+outlineButtonOutlineFg: #c1c1ff; // Outline button color
+outlineButtonBgRipple: #c1c1ff; // Outline button ripple
 
 menuBg: #131313;
 menuBgOver: #474747;
-menuBgRipple: #a9c7ff;
+menuBgRipple: #c1c1ff;
 menuIconFg: #e2e2e2;
 menuIconFgOver: #c6c6c6;
 menuSubmenuArrowFg: #919191;
 menuFgDisabled: #919191;
 menuSeparatorFg: #919191;
 
-scrollBarBg: #a9c7ff40; // Scroll bar background (40% opacity)
-scrollBarBgOver: #a9c7ff60; // Scroll bar hover background (60% opacity)
+scrollBarBg: #c1c1ff40; // Scroll bar background (40% opacity)
+scrollBarBgOver: #c1c1ff60; // Scroll bar hover background (60% opacity)
 scrollBg: #47474740; // Scroll bar track (40% opacity)
 scrollBgOver: #47474760; // Scroll bar track on hover (60% opacity)
 historyScrollBarBg: #e2e2e27a; // Chat scroll bar (48% opacity)
@@ -112,15 +112,15 @@ historyScrollBgOver: #e2e2e26b; // Chat scroll bar track on hover (42% opacity)
 smallCloseIconFg: #919191;
 smallCloseIconFgOver: #c6c6c6;
 
-radialFg: #a9c7ff;
+radialFg: #c1c1ff;
 radialBg: #131313;
 
 placeholderFg: #919191; // Placeholder text
-placeholderFgActive: #a9c7ff; // Active placeholder text
+placeholderFgActive: #c1c1ff; // Active placeholder text
 inputBorderFg: #919191; // Input border
 filterInputBorderFg: #919191; // Search input border
 filterInputInactiveBg: #131313; // Inactive search input background
-checkboxFg: #a9c7ff; // Checkbox color
+checkboxFg: #c1c1ff; // Checkbox color
 
 titleBg: #131313; // Window title background
 titleShadow: #000000;
@@ -145,7 +145,7 @@ cancelIconFgOver: #ffb4ab; // Cancel icon on hover
 
 boxBg: #131313; // Box background
 boxTextFg: #e2e2e2; // Box text
-boxTextFgGood: #a9c7ff; // Box good text
+boxTextFgGood: #c1c1ff; // Box good text
 boxTextFgError: #ffb4ab; // Box error text
 boxTitleFg: #e2e2e2; // Box title text
 boxSearchBg: #131313; // Box search field background
@@ -157,10 +157,10 @@ contactsBgOver: #474747; // Contacts background on hover
 contactsNameFg: #e2e2e2; // Contact name
 contactsStatusFg: #919191; // Contact status
 contactsStatusFgOver: #c6c6c6; // Contact status on hover
-contactsStatusFgOnline: #a9c7ff; // Online contact status
+contactsStatusFgOnline: #c1c1ff; // Online contact status
 
 photoCropFadeBg: #131313cc; // Photo crop fade background
-photoCropPointFg: #a9c7ff; // Photo crop points
+photoCropPointFg: #c1c1ff; // Photo crop points
 
 chat_inBubbleSelected: #313244; // inbox selected chat background
 chat_outBubbleSelected: #313244; // outbox selected chat background

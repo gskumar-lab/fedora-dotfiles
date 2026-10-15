@@ -5,9 +5,11 @@ set -uo pipefail
 
 TODO_DIR="${TUXEDO_DIR:-$HOME/Todo}"
 TODO_FILE="$TODO_DIR/todo.txt"
+CHECKLIST_DIR="$TODO_DIR/checklists"
+ACTIVE_CHECKLIST_DIR="$CHECKLIST_DIR/active"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tuxedo-wrapper"
 CONFIG_FILE="$CONFIG_DIR/config"
-mkdir -p "$TODO_DIR"
+mkdir -p "$TODO_DIR" "$CHECKLIST_DIR" "$ACTIVE_CHECKLIST_DIR"
 SYNC_TRIGGERED=false
 
 # ==========================================
@@ -141,7 +143,7 @@ git_sync() {
 
     if ! git remote | grep -q "^origin$"; then
         if [[ "$quiet" == "quiet" ]] || [ ! -t 0 ]; then
-            git add todo.txt > /dev/null 2>&1
+            git add todo.txt checklists/ > /dev/null 2>&1
             if ! git diff --cached --quiet; then
                 git commit -m "Auto-sync: $(date +'%Y-%m-%d %H:%M:%S')" > /dev/null 2>&1
             fi
@@ -156,13 +158,13 @@ git_sync() {
             [[ "$quiet" != "quiet" ]] && echo "Remote 'origin' added successfully."
         else
             [[ "$quiet" != "quiet" ]] && { echo "Skipping remote sync. Storing locally."; sleep 1; }
-            git add todo.txt > /dev/null 2>&1
+            git add todo.txt checklists/ > /dev/null 2>&1
             ! git diff --cached --quiet && git commit -m "Auto-sync: $(date +'%Y-%m-%d %H:%M:%S')" > /dev/null 2>&1
             return 0
         fi
     fi
 
-    git add todo.txt > /dev/null 2>&1
+    git add todo.txt checklists/ > /dev/null 2>&1
     if ! git diff --cached --quiet; then
         git commit -m "Auto-sync: $(date +'%Y-%m-%d %H:%M:%S')" > /dev/null 2>&1
     fi
@@ -172,7 +174,11 @@ git_sync() {
         git push -u origin main > /dev/null 2>&1 || return 1
     else
         git fetch origin main > /dev/null 2>&1
-        git pull --rebase origin main > /dev/null 2>&1 || { git rebase --abort > /dev/null 2>&1; return 1; }
+        git pull --rebase origin main > /dev/null 2>&1 || { 
+		git rebase --abort > /dev/null 2>&1
+		send_notification "Git merge conflict! Manual intervention required." "error"       
+		return 1
+       	}
         
         LOCAL_COMMIT=$(git rev-parse HEAD)
         REMOTE_COMMIT=$(git rev-parse origin/main)
@@ -183,6 +189,158 @@ git_sync() {
     
     [[ "$quiet" != "quiet" ]] && { echo "Git sync complete!"; sleep 1; }
     return 0
+}
+
+run_checklist() {
+    local target_file="$1"
+    while true; do
+	local tmp_file
+        tmp_file=$(mktemp)
+        grep "^\[ \]" "$target_file" > "$tmp_file" 2>/dev/null || true
+        grep "^\[x\]" "$target_file" >> "$tmp_file" 2>/dev/null || true
+        grep -v "^\[ \]" "$target_file" | grep -v "^\[x\]" >> "$tmp_file" 2>/dev/null || true
+        mv "$tmp_file" "$target_file"
+
+        # Extract items, preserving exact line numbers for precise sed replacements
+        local items
+        items=$(cat -n "$target_file")
+        
+        # Select items using fzf multi-select (-m)
+        local selections
+        selections=$(echo "$items" | fzf -m \
+            --prompt="❯ Checklist (ESC to save): " \
+            --header="TAB: multi-select | ENTER: toggle selected | ESC: save & exit" \
+            --layout=reverse --height=60%)
+        
+        # If nothing is selected (ESC pressed), break the loop and save
+        [[ -z "$selections" ]] && break
+        
+        # Process each selected line
+        while IFS= read -r selection; do
+            local line_num
+            line_num=$(echo "$selection" | awk '{print $1}')
+            
+            # Toggle the checkbox state in-place
+            if sed -n "${line_num}p" "$target_file" | grep -q "\[ \]"; then
+                sed -i "${line_num}s/\[ \]/\[x\]/" "$target_file"
+            elif sed -n "${line_num}p" "$target_file" | grep -q "\[x\]"; then
+                sed -i "${line_num}s/\[x\]/\[ \]/" "$target_file"
+            fi
+        done <<< "$selections"
+    done
+    
+    trigger_sync background
+}
+
+checklists_menu() {
+    while true; do
+        options=(
+            "1. Start New Checklist from Template"
+            "2. Create New Blank Checklist"
+            "3. Resume Active Checklist"
+            "4. Send Unchecked Items to Tuxedo"
+            "5. Delete Active Checklist"
+            "6. Back to Main Menu"
+        )
+        
+        choice=$(printf "%s\n" "${options[@]}" | fzf \
+            --prompt="❯ Checklists Menu: " \
+            --header="Manage your checklists" \
+            --height=50% --layout=reverse --border)
+
+        [[ -z "$choice" ]] && return 0
+
+        case "$choice" in
+            1*) 
+                # Pick template and create active instance
+                local template
+                template=$(ls "$CHECKLIST_DIR"/*.txt 2>/dev/null | fzf --prompt="❯ Select Template: " -1)
+                [[ -n "$template" ]] && {
+                    local base_name
+                    base_name=$(basename "$template" .txt)
+                    local new_active="$ACTIVE_CHECKLIST_DIR/${base_name}_$(date +%Y%m%d_%H%M).txt"
+                    cp "$template" "$new_active"
+                    run_checklist "$new_active"
+                }
+                ;;
+            2*)
+                # Create New Blank Checklist
+                read -e -p "❯ Enter new checklist name: " cl_name
+                if [[ -n "$cl_name" ]]; then
+                    local safe_name
+                    safe_name=$(echo "$cl_name" | tr ' ' '_')
+                    local new_active="$ACTIVE_CHECKLIST_DIR/${safe_name}_$(date +%Y%m%d_%H%M).txt"
+                    
+                    # Open editor for user to add tasks
+                    ${EDITOR:-nano} "$new_active"
+                    
+                    # Auto-format: remove blank lines and prefix tasks with "[ ] " if missing
+                    if [[ -f "$new_active" ]]; then
+                        sed -i -e '/^$/d' -e '/^\[[ x]\]/! s/^/[ ] /' "$new_active"
+                        run_checklist "$new_active"
+                    fi
+                fi
+                ;;
+            3*) 
+                # Resume existing active checklist
+                local active_file
+                active_file=$(ls "$ACTIVE_CHECKLIST_DIR"/*.txt 2>/dev/null | fzf --prompt="❯ Select Active: " -1)
+                [[ -n "$active_file" ]] && run_checklist "$active_file"
+                ;;
+	    4*) 
+                # Export selected unchecked items to tuxedo format
+                local active_file
+                active_file=$(ls "$ACTIVE_CHECKLIST_DIR"/*.txt 2>/dev/null | fzf --prompt="❯ Export from: " -1)
+                
+                if [[ -n "$active_file" ]]; then
+                    local base_name
+                    base_name=$(basename "$active_file" | cut -d'_' -f1)
+                    
+                    # Grab only unchecked items and strip the brackets
+                    local unchecked
+		    unchecked=$(grep "^\[ \]" "$active_file" | sed -e 's/^\[ \] //' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/\r//')
+                    
+                    if [[ -z "$unchecked" ]]; then
+                        echo "No unchecked items found."
+                        sleep 1
+                        continue
+                    fi
+                    
+                    # fzf multi-select for the user to pick which items to export
+                    local selected_tasks
+                    selected_tasks=$(echo "$unchecked" | fzf -m \
+                        --prompt="❯ Select tasks to export: " \
+                        --header="TAB: multi-select | ENTER: export | ESC: cancel" \
+                        --layout=reverse --height=60%)
+                    
+                    if [[ -n "$selected_tasks" ]]; then
+                        while IFS= read -r task; do
+                            tuxedo add "$task +checklist @$base_name"
+                        done <<< "$selected_tasks"
+                        
+                        echo "Exported selected tasks to Tuxedo!"
+                        sleep 1
+                        trigger_sync background
+                    fi
+                fi
+                ;;
+            5*)
+                # Delete Active Checklist
+                local active_file
+                active_file=$(ls "$ACTIVE_CHECKLIST_DIR"/*.txt 2>/dev/null | fzf --prompt="❯ Delete Checklist: " -1)
+                if [[ -n "$active_file" ]]; then
+                    read -e -p "Are you sure you want to delete $(basename "$active_file")? (y/N): " confirm
+                    if [[ "${confirm,,}" == "y" ]]; then
+                        rm -f "$active_file"
+                        echo "Checklist deleted."
+                        sleep 1
+                        trigger_sync background
+                    fi
+                fi
+                ;;
+            6*) return 0 ;;
+        esac
+    done
 }
 
 toggle_auto_sync() {
@@ -345,6 +503,7 @@ show_helper() {
     echo "Options:"
     echo "  -l, --launch            Launch Tuxedo UI"
     echo "  -a, --add               Add a quick todo"
+    echo "  -c, --checklists        Open Checklists Menu"
     echo "  -s, --sync              Manually trigger git sync"
     echo "  -t, --toggle-sync       Toggle auto-sync feature"
     echo "  -rt, --reminders-today  Check today's tasks and notify"
@@ -371,11 +530,12 @@ show_tui() {
         options=(
             "1. Launch Tuxedo"
             "2. Add Quick Todo"
-            "3. Git Sync (Manual)"
-            "4. Toggle Auto-Sync (Currently: $sync_status)"
-            "5. Toggle Reminders (Menu)"
-            "6. Helper"
-            "7. Exit"
+	    "3. Checklists"
+            "4. Git Sync (Manual)"
+            "5. Toggle Auto-Sync (Currently: $sync_status)"
+            "6. Toggle Reminders (Menu)"
+            "7. Helper"
+            "8. Exit"
         )
 
         choice=$(printf "%s\n" "${options[@]}" | fzf \
@@ -388,11 +548,12 @@ show_tui() {
         case "$choice" in
             1*) launch_tuxedo ;;
             2*) add_quick_todo ;;
-            3*) git_sync ;;
-            4*) toggle_auto_sync ;;
-            5*) reminders_menu ;;
-            6*) show_helper ;;
-            7*) wrapper_exit ;;
+	    3*) checklists_menu ;;
+	    4*) git_sync ;;
+            5*) toggle_auto_sync ;;
+            6*) reminders_menu ;;
+            7*) show_helper ;;
+            8*) wrapper_exit ;;
         esac
     done
 }
@@ -406,6 +567,7 @@ if [[ $# -gt 0 ]]; then
     case "$1" in
         -l|--launch)              launch_tuxedo ;;
         -a|--add)                 add_quick_todo ;;
+	-c|--checklists)          checklists_menu ;;
         -s|--sync)                git_sync quiet ;;
         -t|--toggle-sync)         toggle_auto_sync ;;
         -rt|--reminders-today)    check_reminders "today" ;;

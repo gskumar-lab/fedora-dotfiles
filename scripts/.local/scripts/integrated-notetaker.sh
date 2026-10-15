@@ -111,6 +111,15 @@ cmd_quicknote() {
   trap - SIGINT SIGTERM
 }
 
+cmd_glow_tui() {
+  if command -v glow >/dev/null 2>&1; then
+    glow -t "$NOTES_DIR"
+  else
+    echo -e "\033[1;31m✖ Error: glow is not installed.\033[0m"
+    sleep 2
+  fi
+}
+
 cmd_view_quicknotes() {
   if ! command -v fzf >/dev/null 2>&1; then
     echo -e "\033[1;31m✖ Error: fzf is required.\033[0m"
@@ -246,11 +255,12 @@ cmd_help() {
   echo -e "  • ${BOLD}Tag Browser:${NC}       Finds inline #tags across all Markdown notes"
   echo -e "\n${YELLOW}💻 CLI FLAGS:${NC}"
   echo -e "  • ${GREEN}-n, --new${NC}          Create a new Markdown note"
-  echo -e "  • ${GREEN}-r, --read${NC}         Browse and read notes"
+  echo -e "  • ${GREEN}-v, --view${NC}         Browse and read notes"
+  echo -e "  • ${GREEN}-r, --read${NC}         Browse and read notes using Glow"
   echo -e "  • ${GREEN}-s, --search${NC}       Full-text search across notes"
   echo -e "  • ${GREEN}-t, --tags${NC}         Browse notes by #tag"
-  echo -e "  • ${GREEN}-q, --quick${NC}        Jot a quick timestamped note"
-  echo -e "  • ${GREEN}-v, --view-quick${NC}   Search & copy quick notes"
+  echo -e "  • ${GREEN}-qn, --quick${NC}        Jot a quick timestamped note"
+  echo -e "  • ${GREEN}-vq, --view-quick${NC}   Search & copy quick notes"
   echo -e "  • ${GREEN}--sync${NC}             Trigger Git sync"
   echo -e "\n${YELLOW}⚙️  ENVIRONMENT VARIABLES:${NC}"
   echo -e "  • ${GREEN}NOTES_DIR${NC}          Current: $NOTES_DIR"
@@ -283,7 +293,7 @@ export FZF_PREVIEW_OPTS='
         eval "$cmd \"\$file\"" 2>/dev/null | tail -n +"$line" | head -n 30
     else
         if command -v glow >/dev/null 2>&1; then
-            glow -s dark "$file" 2>/dev/null
+            glow -s auto -w 60 "$file" 2>/dev/null
         else
             cmd="cat"
             if command -v bat >/dev/null 2>&1; then cmd="bat --color=always --style=plain";
@@ -312,12 +322,35 @@ cmd_new() {
   read -r -e -p "Note Title: " title
   [[ -z "$title" ]] && return
 
+  # Find existing directories (excluding .git) and use fzf to select or type a new one
+  local target_dir
+  target_dir=$(find . -type d -not -path "*/\.git*" 2>/dev/null | sed 's|^\./||' | sort |
+    fzf --prompt="📂 Select Folder (or type new) > " \
+        --header="[ENTER] to select or create" \
+        --print-query \
+        --border=rounded \
+        --height=50% | tail -n 1)
+
+  # If empty or root, default to current directory (.)
+  [[ -z "$target_dir" || "$target_dir" == "." ]] && target_dir="."
+
+  # Create the directory if it doesn't exist
+  if [[ ! -d "$target_dir" ]]; then
+    mkdir -p "$target_dir"
+  fi
+
   local file
-  file="$(slugify "$title")$EXT"
+  # Construct the file path keeping the directory intact
+  file="${target_dir}/$(slugify "$title")$EXT"
+  
+  # Clean up path visually if it starts with ./
+  file="${file#./}"
+
   if [[ ! -f "$file" ]]; then
     echo "# $title" >"$file"
     echo -e "\nTags: \nDate: $(date +%Y-%m-%d)\n" >>"$file"
   fi
+  
   open_in_editor "$file"
 }
 
@@ -354,7 +387,7 @@ cmd_read() {
       sleep 1
     fi
   else
-    if command -v glow >/dev/null 2>&1; then glow -p "$file"
+    if command -v glow >/dev/null 2>&1; then glow -p -n "$file"
     elif command -v bat >/dev/null 2>&1; then bat --paging=always "$file"
     elif command -v batcat >/dev/null 2>&1; then batcat --paging=always "$file"
     else less "$file"; fi
@@ -436,11 +469,12 @@ cd "$NOTES_DIR" || exit 1
 if [[ $# -gt 0 ]]; then
   case "$1" in
     -n|--new)        cmd_new; exit 0 ;;
-    -r|--read)       cmd_read; exit 0 ;;
+    -r|--read)       cmd_glow_tui; exit 0 ;;
+    -v|--view)	     cmd_read; exit 0;;
     -s|--search)     cmd_search; exit 0 ;;
     -t|--tags)       cmd_tags; exit 0 ;;
-    -q|--quick)      cmd_quicknote; exit 0 ;;
-    -v|--view-quick) cmd_view_quicknotes; exit 0 ;;
+    -qn|--quick)      cmd_quicknote; exit 0 ;;
+    -vq|--view-quick) cmd_view_quicknotes; exit 0 ;;
     --sync)          cmd_sync; exit 0 ;;
     -h|--help)       cmd_help; exit 0 ;;
     *) echo "Unknown option: $1 (use --help for reference)"; exit 1 ;;
@@ -451,7 +485,7 @@ while true; do
   sync_status="Off"
   if [ -f "$NOTES_DIR/.autosync" ] && grep -q "true" "$NOTES_DIR/.autosync"; then sync_status="On"; fi
   
-  choice=$(printf "📝 New Note\n📖 Read Note\n🔍 Search Notes\n🏷️ Browse by Tag\n⚡ Add Quick Note\n📜 View Quick Notes\n🔄 Sync Notes Now\n⚙️ Toggle Auto-Sync: [$sync_status]\n❓ Help / Info\n❌ Quit" |
+  choice=$(printf "📝 New Note\n📖 Read Notes\n👁️ View Notes\n🔍 Search Notes\n🏷️ Browse by Tag\n⚡ Add Quick Note\n📜 View Quick Notes\n🔄 Sync Notes Now\n⚙️ Toggle Auto-Sync: [$sync_status]\n❓ Help / Info\n❌ Quit" |
     fzf --prompt="Menu> " \
       --layout=reverse \
       --border=rounded \
@@ -463,7 +497,8 @@ while true; do
 
   case "$choice" in
   "📝 New Note") cmd_new ;;
-  "📖 Read Note") cmd_read ;;
+  "📖 Read Notes") cmd_glow_tui ;;
+  "👁️ View Notes") cmd_read ;;
   "🔍 Search Notes") cmd_search ;;
   "🏷️ Browse by Tag") cmd_tags ;;
   "⚡ Add Quick Note") cmd_quicknote ;;
