@@ -3,9 +3,9 @@
 # Exit on pipeline failures
 set -uo pipefail
 
-TODO_DIR="$HOME/Todo"
+TODO_DIR="${TUXEDO_DIR:-$HOME/Todo}"
 TODO_FILE="$TODO_DIR/todo.txt"
-CONFIG_DIR="$HOME/.config/tuxedo-wrapper"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tuxedo-wrapper"
 CONFIG_FILE="$CONFIG_DIR/config"
 mkdir -p "$TODO_DIR"
 SYNC_TRIGGERED=false
@@ -44,26 +44,25 @@ send_notification() {
     fi
 
     if [[ "$status" == "error" ]]; then
-        notify-send "Tuxedo" "$message" -u critical --icon=dialog-error
+        notify-send "Tuxedo" "$message" -u critical --icon=realtimesync
     else
-        notify-send "Tuxedo" "$message" -u low --icon=document-save
+        notify-send "Tuxedo" "$message" -t 1000 -u low --icon=freefilesync
     fi
 }
 
 run_background_sync() {
-    local LOCK_FILE="$CONFIG_DIR/sync.lock"
-    if [[ -f "$LOCK_FILE" ]]; then
+    local LOCK_DIR="$CONFIG_DIR/sync.lock.d"
+    if ! mkdir "$LOCK_DIR" 2>/dev/null; then
         return 0
     fi
     (
         trap '' HUP
-        touch "$LOCK_FILE"
         if git_sync quiet; then
             send_notification "Auto-sync complete!" "success"
         else
             send_notification "Auto-sync failed!" "error"
         fi
-        rm -f "$LOCK_FILE"
+        rmdir "$LOCK_DIR"
     ) </dev/null >/dev/null 2>&1 &
     disown -h $! 2>/dev/null || disown
 }
@@ -97,12 +96,12 @@ add_quick_todo() {
     echo ""
     echo "--- Recent Tasks ---"
     if [[ -f "$TODO_FILE" ]]; then
-        tail -n 3 "$TODO_FILE" | awk '{
-            if ($0 ~ /^\(A\)/) print "\033[1;31m" $0 "\033[0m"
-            else if ($0 ~ /^\(B\)/) print "\033[1;33m" $0 "\033[0m"
-            else if ($0 ~ /^\(C\)/) print "\033[1;32m" $0 "\033[0m"
-            else if ($0 ~ /^\([D-Z]\)/) print "\033[1;36m" $0 "\033[0m"
-            else print $0
+         tail -n 3 "$TODO_FILE" | awk '{
+            if ($0 ~ /^[[:space:]]*([0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]+)?\(A\)/) print "\033[1;31m" $0 "\033[0m"
+            else if ($0 ~ /^[[:space:]]*([0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]+)?\(B\)/) print "\033[1;33m" $0 "\033[0m"
+            else if ($0 ~ /^[[:space:]]*([0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]+)?\(C\)/) print "\033[1;32m" $0 "\033[0m"
+            else if ($0 ~ /^[[:space:]]*([0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]+)?\([D-Z]\)/) print "\033[1;36m" $0 "\033[0m"   
+	    else print $0
         }'
     else
         echo "No tasks found."
@@ -188,11 +187,11 @@ git_sync() {
 
 toggle_auto_sync() {
     if [[ "$AUTO_SYNC" == "true" ]]; then
-        sed -i 's/AUTO_SYNC=true/AUTO_SYNC=false/' "$CONFIG_FILE"
+        sed -i -E 's/^AUTO_SYNC=.*/AUTO_SYNC=false/' "$CONFIG_FILE"
         echo "Auto-sync disabled."
     else
-        sed -i 's/AUTO_SYNC=false/AUTO_SYNC=true/' "$CONFIG_FILE"
-        echo "Auto-sync enabled."
+        sed -i -E 's/^AUTO_SYNC=.*/AUTO_SYNC=true/' "$CONFIG_FILE"
+	echo "Auto-sync enabled."
     fi
     source "$CONFIG_FILE"
     sleep 1
@@ -259,6 +258,12 @@ check_reminders() {
 }
 
 manage_cron_toggle() {
+    
+	# Define the backup path and create the backup safely
+    local backup_file="/tmp/crontab_backup_$(date +%s).bak"
+    crontab -l > "$backup_file" 2>/dev/null || true
+    echo "Crontab backed up to: $backup_file"
+    
     local mode=$1
     local script_path
     script_path=$(readlink -f "$0")

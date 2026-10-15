@@ -6,7 +6,7 @@ ui_scale = 1.2500000111758709
 [bar.default]
 background_opacity = 0.84999998100101948
 capsule_thickness = 0.69999998807907104
-center = [ "notifications", "toggle", "clock", "group:g1", "widget_2", "radio", "widget" ]
+center = [ "notifications", "toggle", "clock", "group:g1", "widget_2", "radio", "widget", "button" ]
 end = [ "group:g3", "group:g4", "group:g2" ]
 font_family = "Adwaita Sans"
 font_scale = 1.1999999806284904
@@ -163,7 +163,13 @@ layer = "overlay"
 hyprland_lua_config = "~/.config/hypr/config/binds.lua"
 
 [plugins]
-enabled = [ "maddingo/hypr-layout-switcher", "thepunkoff/pomodoro", "fel/ocr", "nilsonlinux/world-radio" ]
+enabled = [
+    "maddingo/hypr-layout-switcher",
+    "thepunkoff/pomodoro",
+    "fel/ocr",
+    "nilsonlinux/world-radio",
+    "michael-retunzew/hyprland-settings"
+]
 
 [shell]
 clipboard_history_max_entries = 50
@@ -219,6 +225,7 @@ enabled = false
 builtin = "Tokyo-Night"
 community_palette = "Lilac AMOLED"
 source = "wallpaper"
+wallpaper_scheme = "m3-rainbow"
 
     [theme.templates]
     builtin_ids = [ "btop", "foot", "gtk3", "gtk4", "hyprland", "kcolorscheme", "mango", "qt", "starship" ]
@@ -248,13 +255,13 @@ transition_on_startup = true
     enabled = true
 
     [wallpaper.default]
-    path = "/home/gskumar/.config/backgrounds/neon-lights-hallway-1920x1080-12525.jpg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-pkxlg3_1920x1080.jpeg"
 
     [wallpaper.last]
-    path = "/home/gskumar/.config/backgrounds/neon-lights-hallway-1920x1080-12525.jpg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-pkxlg3_1920x1080.jpeg"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/gskumar/.config/backgrounds/neon-lights-hallway-1920x1080-12525.jpg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-pkxlg3_1920x1080.jpeg"
 
 [weather]
 enabled = false
@@ -262,6 +269,9 @@ enabled = false
 [widget.active_window]
 icon_size = 20
 max_length = 399
+
+[widget.button]
+type = "michael-retunzew/hyprland-settings:button"
 
 [widget.clock]
 anchor = true

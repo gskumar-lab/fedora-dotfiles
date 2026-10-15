@@ -1,5 +1,5 @@
 # tuxedo config
-theme = Muted Slate
+theme = Matrix
 density = comfortable
 sort = due
 show_left = true

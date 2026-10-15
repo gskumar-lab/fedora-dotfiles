@@ -72,9 +72,9 @@ fi
 # Interactive Retry Loop
 while true; do
   if [ ${#ACTIVE_JOBS[@]} -gt 0 ]; then
-    PROMPT_TEXT="❯ In how long? (e.g., 15m, 14:30) OR 'k<id>' to kill, 'q' to quit: "
+  	PROMPT_TEXT=$'\nOptions:\n  [Time]  In how long? (e.g., 15m, 14:30)\n  [k<id>] Kill a job\n  [q]     Quit\n\nYour choice: '
   else
-    PROMPT_TEXT="❯ In how long? (e.g., 15m, 2h, 45, 14:30) OR 'q' to quit: "
+    PROMPT_TEXT=$'\nOptions:\n  [Time]  In how long? (e.g., 15m, 2h, 45, 14:30)\n  [q]     Quit\n\nYour choice: '
   fi
 
   read -e -p "$PROMPT_TEXT" TIME_IN

@@ -14,6 +14,7 @@ require("config.workspaces")
 
 
 require("hyprland-gui")
+require("hyprland-settings")
 
 -- For Noctalia Color templates
 require("noctalia").apply_theme()
