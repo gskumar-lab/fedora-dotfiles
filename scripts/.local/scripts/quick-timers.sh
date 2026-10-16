@@ -57,7 +57,7 @@ send_notification() {
     local msg="$2"
     play_audio
     if command -v notify-send &> /dev/null; then
-        notify-send "$title" "$msg" -i "timer" -u critical
+        notify-send "$title" "$msg" -i alarm-timer -u critical
     fi
 }
 
@@ -352,7 +352,7 @@ execute_tool() {
 }
 
 show_menu() {
-    echo -e "$3" | fzf --prompt="$1" --header=" $2 " \
+    echo -e "$3" | fzf --reverse --prompt="$1" --header=" $2 " \
         --border=rounded --margin=5% --padding=1 --info=hidden \
         --bind "esc:abort" \
         --color="border:#5eacd3,header:#89b4fa,prompt:#a6e3a1"

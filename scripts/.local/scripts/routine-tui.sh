@@ -186,7 +186,7 @@ run_pomodoro() {
 
             if [ -z "$action" ]; then
                 if command -v notify-send &> /dev/null; then
-                    notify-send -u low -t 0 "🍅 Focus Session Complete!" "Great job working on: $p_task"
+                    notify-send -e -t 0 "🍅 Focus Session Complete!" "Great job working on: $p_task"
                 else
                     echo -e "\a"
                 fi
@@ -232,7 +232,7 @@ run_pomodoro() {
 
                         if [ $b_left -eq 0 ]; then
                             if command -v notify-send &> /dev/null; then
-                                notify-send -u low -t 0 "☕ Break Over!" "Ready to focus?"
+                                notify-send -e -t 0 "☕ Break Over!" "Ready to focus?"
                             else
                                 echo -e "\a"
                             fi
@@ -325,7 +325,7 @@ case "$1" in
         todo_count=$(grep -c "^" "$TODO" || true)
         if [ "$todo_count" -gt 0 ]; then
             if command -v notify-send &> /dev/null; then
-                action=$(notify-send -u critical -t 0 \
+                action=$(notify-send -t 0 \
                     --action="open=Open Planner" \
                     "⏰ Routine Reminder" \
                     "You have $todo_count tasks left today!")

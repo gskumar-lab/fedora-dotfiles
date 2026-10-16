@@ -46,9 +46,9 @@ send_notification() {
     fi
 
     if [[ "$status" == "error" ]]; then
-        notify-send "Tuxedo" "$message" -u critical --icon=realtimesync
+        notify-send "Tuxedo" "$message" -t 0 --icon=realtimesync
     else
-        notify-send "Tuxedo" "$message" -t 1000 -u low --icon=freefilesync
+        notify-send "Tuxedo" "$message" -t 1000 -e --icon=freefilesync
     fi
 }
 
@@ -210,7 +210,7 @@ run_checklist() {
         selections=$(echo "$items" | fzf -m \
             --prompt="❯ Checklist (ESC to save): " \
             --header="TAB: multi-select | ENTER: toggle selected | ESC: save & exit" \
-            --layout=reverse --height=60%)
+            --layout=reverse --height=60% --border)
         
         # If nothing is selected (ESC pressed), break the loop and save
         [[ -z "$selections" ]] && break

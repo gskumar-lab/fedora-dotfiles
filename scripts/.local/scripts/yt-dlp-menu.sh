@@ -44,7 +44,7 @@ mkdir -p "$TMP_BASE"
 
 # Notification Helper
 notify() {
-    notify-send "yt-dlp Manager" "$1" || echo -e "\n🔔 $1"
+    notify-send -e "yt-dlp Manager" "$1" || echo -e "\n🔔 $1"
 }
 
 # 3. Background Download Engine

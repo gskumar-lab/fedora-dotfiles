@@ -60,8 +60,6 @@ send_notification() {
     
     if command -v notify-send &> /dev/null; then
         notify-send -a "Pass-TUI" "$@" "$title" "$message"
-    elif command -v osascript &> /dev/null; then
-        osascript -e "display notification \"$message\" with title \"$title\""
     fi
 }
 
@@ -108,9 +106,9 @@ handle_git_bg() {
 
             if git pull --rebase origin "$current_branch" >/dev/null 2>&1 && \
                git push -u origin "$current_branch" >/dev/null 2>&1; then
-                send_notification "Pass-TUI Git" "Sync completed successfully." -u low -t 1000 -i freefilesync
+                send_notification "Pass-TUI Git" "Sync completed successfully." -e -t 1000 -i freefilesync
             else
-                send_notification "Pass-TUI Git Error" "Sync failed! Check network or conflicts." -u critical -i realtimesync
+                send_notification "Pass-TUI Git Error" "Sync failed! Check network or conflicts." -t 0 -i realtimesync
             fi
         else
             send_notification "Pass-TUI Git Error" "No Git remote configured." -u critical -i gtk-dialog-error
@@ -292,7 +290,7 @@ main() {
             enter)
                 if [ -n "$entry" ]; then
                     pass -c "$entry"
-                    send_notification "Pass-TUI" "Password copied to clipboard." -t 2000
+                    send_notification "Pass-TUI" "Password copied to clipboard." -t 3000
                 fi
                 ;;
             ctrl-v)
@@ -336,7 +334,7 @@ main() {
                 if [ -n "$entry" ]; then
                     if pass otp show "$entry" &>/dev/null; then
                         pass otp -c "$entry"
-                        send_notification "Pass-TUI" "OTP copied to clipboard." -t 2000
+                        send_notification "Pass-TUI" "OTP copied to clipboard." -t 3000
                     else
                         echo "No OTP configuration found for $entry."
                         read -p "Do you want to add an OTP code? (y/n) " add_otp

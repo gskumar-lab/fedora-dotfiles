@@ -14,6 +14,27 @@ check_installed() {
     fi
 }
 
+send_notification() {
+    local title="$1"
+    local message="$2"
+    local target_user="${SUDO_USER:-$USER}"
+
+    # If running as regular user without sudo, run notify-send directly
+    if [ -z "$SUDO_USER" ]; then
+        notify-send -i network-vpn "$title" "$message" 2>/dev/null
+        return
+    fi
+
+    # Detect user's DBUS address and run notify-send inside their user session
+    local user_id
+    user_id=$(id -u "$target_user")
+
+    sudo -u "$target_user" \
+        DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${user_id}/bus" \
+        DISPLAY="${DISPLAY:-:0}" \
+        notify-send -i network-vpn "$title" "$message" 2>/dev/null
+}
+
 install_warp() {
     echo "Installing Cloudflare WARP..."
     sudo dnf install cloudflare-warp -y
@@ -55,10 +76,21 @@ change_mode() {
     check_installed
     local mode=$1
     if [ -z "$mode" ]; then
-        echo "Available modes: [ warp, doh, warp+doh, dot, warp+dot, proxy, tunnel_only ]"
-        read -p "Enter desired mode: " mode
+        if ! command -v fzf &> /dev/null; then
+            echo "fzf is not installed. Available modes: warp, doh, warp+doh, dot, warp+dot, proxy, tunnel_only"
+            read -p "Enter desired mode: " mode
+        else
+            local modes="warp\ndoh\nwarp+doh\ndot\nwarp+dot\nproxy\ntunnel_only"
+            mode=$(echo -e "$modes" | fzf --prompt="Select Mode > " --height=30% --layout=reverse --border=rounded)
+        fi
     fi
-    warp-cli mode "$mode"
+    
+    if [ -n "$mode" ]; then
+        warp-cli mode "$mode"
+        echo "Mode changed to: $mode"
+    else
+        echo "Operation cancelled."
+    fi
 }
 
 connect_warp() {
@@ -79,7 +111,6 @@ disconnect_warp() {
     status_warp
     
     stop_svc
-    
     systemctl --user stop warp-desktop-svc.service 2>/dev/null
     echo "Service stopped."
 }
@@ -88,77 +119,85 @@ toggle_warp() {
     check_installed
     local SERVICE="warp-svc.service"
 
-    # Get the actual user to ensure notify-send works even when run with sudo
-    local USER_NAME=${SUDO_USER:-$USER}
-
     if systemctl is-active --quiet "$SERVICE"; then
         # WARP is ON → disconnect and stop service
         warp-cli disconnect
         sudo systemctl stop "$SERVICE"
-
-        sudo -u "$USER_NAME" notify-send "Cloudflare WARP" "Disconnected 🔴" 2>/dev/null
+        send_notification "Cloudflare WARP" "Disconnected 🔴"
         echo "WARP Disconnected."
     else
         # WARP is OFF → start service and connect
         sudo systemctl start "$SERVICE"
-
-        # Give warp-svc time to initialize
         sleep 1
-
         warp-cli connect
-
-        sudo -u "$USER_NAME" notify-send "Cloudflare WARP" "Connected 🟢" 2>/dev/null
+        send_notification "Cloudflare WARP" "Connected 🟢"
         echo "WARP Connected."
     fi
 }
 
 # ==========================================
-# Interactive Menu
+# Interactive fzf Menu
 # ==========================================
 
 interactive_menu() {
+    if ! command -v fzf &> /dev/null; then
+        echo "Error: 'fzf' is required for the interactive menu."
+        echo "Please install it using: sudo dnf install fzf"
+        exit 1
+    fi
+
+    # Define menu options (Most used at the top)
+    local options="1. Toggle WARP (ON/OFF)
+2. Connect
+3. Disconnect
+4. Check Status
+5. Change Mode
+6. Start WARP Service
+7. Stop WARP Service
+8. New Registration
+9. Install Cloudflare WARP
+10. Uninstall Cloudflare WARP
+0. Exit"
+
     while true; do
         clear
         echo "========================================="
-        echo "     Cloudflare WARP Management Tool     "
+        echo "     Cloudflare WARP Manager (fzf)       "
         echo "========================================="
-        echo "1. Install Cloudflare WARP"
-        echo "2. Uninstall Cloudflare WARP"
-        echo "3. Start WARP Service"
-        echo "4. Stop WARP Service"
-        echo "5. New Registration"
-        echo "6. Check Status"
-        echo "7. Change Mode"
-        echo "8. Connect"
-        echo "9. Disconnect"
-        echo "10. Toggle WARP (ON/OFF)"
-        echo "0. Exit"
-        echo "========================================="
-
-        if ! command -v warp-cli &> /dev/null; then
-            echo "WARP is not installed. Please run Option 1 first."
-        fi
         
-        read -p "Select an option [0-10]: " choice
-        echo ""
+        if ! command -v warp-cli &> /dev/null; then
+            echo -e "\n⚠️  WARP is not installed. Please select 'Install Cloudflare WARP'."
+        fi
 
-        case $choice in
-            1) install_warp ;;
-            2) uninstall_warp ;;
-            3) start_svc ;;
-            4) stop_svc ;;
-            5) register_warp ;;
-            6) status_warp ;;
-            7) change_mode ;;
-            8) connect_warp ;;
-            9) disconnect_warp ;;
-            10) toggle_warp ;;
-            0) echo "Exiting..."; exit 0 ;;
-            *) echo "Invalid option. Please try again." ;;
+        # Pass options to fzf
+        local choice
+        choice=$(echo "$options" | fzf --prompt="Select an option > " --height=50% --layout=reverse --border=rounded)
+
+        # Handle cancellation (ESC/Ctrl+C)
+        if [ -z "$choice" ]; then
+            echo "Exiting..."
+            exit 0
+        fi
+
+        echo ""
+        # Execute based on selection prefix
+        case "$choice" in
+            1.*) toggle_warp ;;
+            2.*) connect_warp ;;
+            3.*) disconnect_warp ;;
+            4.*) status_warp ;;
+            5.*) change_mode ;;
+            6.*) start_svc ;;
+            7.*) stop_svc ;;
+            8.*) register_warp ;;
+            9.*) install_warp ;;
+            10.*) uninstall_warp ;;
+            0.*) echo "Exiting..."; exit 0 ;;
+            *) echo "Invalid option." ;;
         esac
         
         echo ""
-        read -p "Press [Enter] to return to the menu..."
+        read -n 1 -s -r -p "Press any key to return to the menu..."
     done
 }
 
@@ -178,7 +217,7 @@ else
             -r|--register) register_warp; exit 0 ;;
             -t|--status) status_warp; exit 0 ;;
             -m|--mode) 
-                if [ -n "$2" ]; then
+                if [ -n "$2" ] && [[ "$2" != -* ]]; then
                     change_mode "$2"
                     shift
                 else
@@ -197,7 +236,7 @@ else
                 echo "  -x, --stop         Stop WARP background service"
                 echo "  -r, --register     Register a new WARP client"
                 echo "  -t, --status       Check WARP status"
-                echo "  -m, --mode [MODE]  Change WARP mode"
+                echo "  -m, --mode [MODE]  Change WARP mode (uses fzf if no mode provided)"
                 echo "  -c, --connect      Start service and connect"
                 echo "  -d, --disconnect   Disconnect and stop service"
                 echo "  -g, --toggle       Toggle WARP connection ON/OFF"
@@ -213,3 +252,4 @@ else
         shift
     done
 fi
+

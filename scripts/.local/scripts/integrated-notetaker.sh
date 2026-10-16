@@ -22,9 +22,9 @@ send_notification() {
   fi
 
   if [[ "$status" == "error" ]]; then
-    notify-send "Tuxedo Notes" "$message" -u critical --icon=realtimesync
+    notify-send "Tuxedo Notes" "$message" -t 0 --icon=realtimesync
   else
-    notify-send "Tuxedo Notes" "$message" -t 1000  -u low --icon=freefilesync
+    notify-send "Tuxedo Notes" "$message" -t 1000  -e --icon=freefilesync
   fi
 }
 

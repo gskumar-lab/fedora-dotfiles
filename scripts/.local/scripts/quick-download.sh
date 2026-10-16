@@ -104,7 +104,7 @@ if [ "\$NUM" -gt 0 ] && [ -e "\$FILE" ]; then
     echo "\$(date '+%Y-%m-%d %H:%M:%S') | \$BASENAME" >> "$COMPLETED_FILE"
 
     if command -v notify-send &> /dev/null; then
-        notify-send "Download Complete" "\$BASENAME" --icon=folder-download
+        notify-send "Download Complete" "\$BASENAME" -i downloader-arrow
     fi
 fi
 
@@ -227,9 +227,9 @@ while true; do
             if [[ "$ADDED_COUNT" -gt 0 ]]; then
                 echo -e "\n✔ Successfully added $ADDED_COUNT download(s) to the queue."
                 if command -v notify-send &> /dev/null; then
-                    notify-send -u low "Quick Downloader" "Added $ADDED_COUNT download(s) to the queue." --icon=document-save
+                    notify-send -e "Quick Downloader" "Added $ADDED_COUNT download(s) to the queue." -i download
                 fi
-                sleep 1.5
+                sleep 0.5
             else
                 echo -e "\n✖ No valid URLs or .torrent files found."
                 sleep 1.5

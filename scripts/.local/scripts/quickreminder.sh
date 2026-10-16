@@ -165,7 +165,7 @@ while true; do
                 fi
                 
                 # Interactive "Snooze" Buttons
-                RESULT=$(notify-send -u critical -t 0 --action="snooze=Snooze 10m" --action="dismiss=Dismiss" "⏰ Reminder" "$MSG")
+                RESULT=$(notify-send -u critical -t 0 -i alarm-clock-triggered --action="snooze=Snooze 10m" --action="dismiss=Dismiss" " Reminder" "$MSG")
                 
                 if [ "$RESULT" == "snooze" ]; then
                     # Update variables for snooze
