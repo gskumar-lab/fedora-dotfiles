@@ -260,13 +260,13 @@ transition_on_startup = true
     enabled = true
 
     [wallpaper.default]
-    path = "/home/gskumar/.config/backgrounds/jungle-tree-dark-1920x1080-22695.jpg"
+    path = "/home/gskumar/.config/backgrounds/lit-up-sky.png"
 
     [wallpaper.last]
-    path = "/home/gskumar/.config/backgrounds/jungle-tree-dark-1920x1080-22695.jpg"
+    path = "/home/gskumar/.config/backgrounds/lit-up-sky.png"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/gskumar/.config/backgrounds/jungle-tree-dark-1920x1080-22695.jpg"
+    path = "/home/gskumar/.config/backgrounds/lit-up-sky.png"
 
 [weather]
 enabled = false
