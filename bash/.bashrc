@@ -7,7 +7,7 @@ fi
 
 # User PATH
 export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.cargo/bin:$HOME/.local/scripts:$PATH"
-export TODO_DIR="$HOME/Todo"
+#export TODO_DIR="$HOME/Todo"
 
 # Uncomment the following line if you don't like systemctl's auto-paging feature:
 # export SYSTEMD_PAGER=
