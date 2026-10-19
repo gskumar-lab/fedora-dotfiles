@@ -3,29 +3,19 @@
 # Exit on pipeline failures
 set -uo pipefail
 
-TODO_DIR="${TUXEDO_DIR:-$HOME/Todo}"
+# Integrated Configuration: Exporting to force the tuxedo binary to use the Hub data directory
+export TUXEDO_DIR="$HOME/.productivity-suite/data/Todo"
+TODO_DIR="$TUXEDO_DIR"
 TODO_FILE="$TODO_DIR/todo.txt"
 CHECKLIST_DIR="$TODO_DIR/checklists"
 ACTIVE_CHECKLIST_DIR="$CHECKLIST_DIR/active"
-CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tuxedo-wrapper"
-CONFIG_FILE="$CONFIG_DIR/config"
 mkdir -p "$TODO_DIR" "$CHECKLIST_DIR" "$ACTIVE_CHECKLIST_DIR"
-SYNC_TRIGGERED=false
 
 # ==========================================
-# 1. SETUP & CONFIGURATION
-# ==========================================
-mkdir -p "$CONFIG_DIR"
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    echo "AUTO_SYNC=false" > "$CONFIG_FILE"
-fi
-source "$CONFIG_FILE"
-
-# ==========================================
-# 2. DEPENDENCY CHECKS
+# 1. DEPENDENCY CHECKS
 # ==========================================
 check_dependencies() {
-    local deps=("tuxedo" "fzf" "git")
+    local deps=("tuxedo" "fzf")
     for cmd in "${deps[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
             echo "Error: Required dependency '$cmd' is not installed." >&2
@@ -35,7 +25,7 @@ check_dependencies() {
 }
 
 # ==========================================
-# 3. CORE FUNCTIONS
+# 2. CORE FUNCTIONS
 # ==========================================
 send_notification() {
     local message="$1"
@@ -46,48 +36,14 @@ send_notification() {
     fi
 
     if [[ "$status" == "error" ]]; then
-        notify-send "Tuxedo" "$message" -t 0 --icon=realtimesync
+        notify-send "Tuxedo" "$message" -t 0 --icon=dialog-error
     else
-        notify-send "Tuxedo" "$message" -t 1000 -e --icon=freefilesync
-    fi
-}
-
-run_background_sync() {
-    local LOCK_DIR="$CONFIG_DIR/sync.lock.d"
-    if ! mkdir "$LOCK_DIR" 2>/dev/null; then
-        return 0
-    fi
-    (
-        trap '' HUP
-        if git_sync quiet; then
-            send_notification "Auto-sync complete!" "success"
-        else
-            send_notification "Auto-sync failed!" "error"
-        fi
-        rmdir "$LOCK_DIR"
-    ) </dev/null >/dev/null 2>&1 &
-    disown -h $! 2>/dev/null || disown
-}
-
-trigger_sync() {
-    local mode=${1:-"background"}
-    if [[ "$AUTO_SYNC" == "true" && "$SYNC_TRIGGERED" == "false" ]]; then
-        SYNC_TRIGGERED=true
-        if [[ "$mode" == "foreground" ]]; then
-            if git_sync quiet; then
-                send_notification "Sync complete!" "success"
-            else
-                send_notification "Sync failed!" "error"
-            fi
-        else
-            run_background_sync
-        fi
+        notify-send "Tuxedo" "$message" -t 1000 -e --icon=task-due
     fi
 }
 
 launch_tuxedo() {
     tuxedo
-    trigger_sync background
 }
 
 add_quick_todo() {
@@ -120,75 +76,8 @@ add_quick_todo() {
         fi
         tuxedo add "$TASK"
         echo -e "\033[1;32mTask added successfully!\033[0m"
-        trigger_sync background
+        sleep 1
     fi
-}
-
-git_sync() {
-    local quiet=${1:-""}
-    [[ "$quiet" != "quiet" ]] && echo "Syncing with git..."
-    
-    cd "$TODO_DIR" || exit 1
-    
-    if [[ -f ".git/index.lock" ]]; then
-        [[ "$quiet" != "quiet" ]] && echo "Git is currently syncing in the background."
-        return 1
-    fi
-
-    if [[ ! -d ".git" ]]; then
-        git init > /dev/null 2>&1
-        git branch -M main > /dev/null 2>&1
-        [[ "$quiet" != "quiet" ]] && echo "Initialized new git repository."
-    fi
-
-    if ! git remote | grep -q "^origin$"; then
-        if [[ "$quiet" == "quiet" ]] || [ ! -t 0 ]; then
-            git add todo.txt checklists/ > /dev/null 2>&1
-            if ! git diff --cached --quiet; then
-                git commit -m "Auto-sync: $(date +'%Y-%m-%d %H:%M:%S')" > /dev/null 2>&1
-            fi
-            return 0
-        fi
-
-        clear
-        echo -e "\nGit remote 'origin' is not configured."
-        read -e -p "❯ Enter remote repository URL (or leave blank for local-only): " REMOTE_URL
-        if [[ -n "$REMOTE_URL" ]]; then
-            git remote add origin "$REMOTE_URL"
-            [[ "$quiet" != "quiet" ]] && echo "Remote 'origin' added successfully."
-        else
-            [[ "$quiet" != "quiet" ]] && { echo "Skipping remote sync. Storing locally."; sleep 1; }
-            git add todo.txt checklists/ > /dev/null 2>&1
-            ! git diff --cached --quiet && git commit -m "Auto-sync: $(date +'%Y-%m-%d %H:%M:%S')" > /dev/null 2>&1
-            return 0
-        fi
-    fi
-
-    git add todo.txt checklists/ > /dev/null 2>&1
-    if ! git diff --cached --quiet; then
-        git commit -m "Auto-sync: $(date +'%Y-%m-%d %H:%M:%S')" > /dev/null 2>&1
-    fi
-    
-    if ! git rev-parse --abbrev-ref --symbolic-full-name @{u} > /dev/null 2>&1; then
-        [[ "$quiet" != "quiet" ]] && echo "Setting upstream branch and pushing..."
-        git push -u origin main > /dev/null 2>&1 || return 1
-    else
-        git fetch origin main > /dev/null 2>&1
-        git pull --rebase origin main > /dev/null 2>&1 || { 
-		git rebase --abort > /dev/null 2>&1
-		send_notification "Git merge conflict! Manual intervention required." "error"       
-		return 1
-       	}
-        
-        LOCAL_COMMIT=$(git rev-parse HEAD)
-        REMOTE_COMMIT=$(git rev-parse origin/main)
-        if [[ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]]; then
-            git push origin main > /dev/null 2>&1 || return 1
-        fi
-    fi
-    
-    [[ "$quiet" != "quiet" ]] && { echo "Git sync complete!"; sleep 1; }
-    return 0
 }
 
 run_checklist() {
@@ -228,8 +117,6 @@ run_checklist() {
             fi
         done <<< "$selections"
     done
-    
-    trigger_sync background
 }
 
 checklists_menu() {
@@ -252,7 +139,6 @@ checklists_menu() {
 
         case "$choice" in
             1*) 
-                # Pick template and create active instance
                 local template
                 template=$(ls "$CHECKLIST_DIR"/*.txt 2>/dev/null | fzf --prompt="❯ Select Template: " -1)
                 [[ -n "$template" ]] && {
@@ -264,17 +150,14 @@ checklists_menu() {
                 }
                 ;;
             2*)
-                # Create New Blank Checklist
                 read -e -p "❯ Enter new checklist name: " cl_name
                 if [[ -n "$cl_name" ]]; then
                     local safe_name
                     safe_name=$(echo "$cl_name" | tr ' ' '_')
                     local new_active="$ACTIVE_CHECKLIST_DIR/${safe_name}_$(date +%Y%m%d_%H%M).txt"
                     
-                    # Open editor for user to add tasks
                     ${EDITOR:-nano} "$new_active"
                     
-                    # Auto-format: remove blank lines and prefix tasks with "[ ] " if missing
                     if [[ -f "$new_active" ]]; then
                         sed -i -e '/^$/d' -e '/^\[[ x]\]/! s/^/[ ] /' "$new_active"
                         run_checklist "$new_active"
@@ -282,13 +165,11 @@ checklists_menu() {
                 fi
                 ;;
             3*) 
-                # Resume existing active checklist
                 local active_file
                 active_file=$(ls "$ACTIVE_CHECKLIST_DIR"/*.txt 2>/dev/null | fzf --prompt="❯ Select Active: " -1)
                 [[ -n "$active_file" ]] && run_checklist "$active_file"
                 ;;
 	    4*) 
-                # Export selected unchecked items to tuxedo format
                 local active_file
                 active_file=$(ls "$ACTIVE_CHECKLIST_DIR"/*.txt 2>/dev/null | fzf --prompt="❯ Export from: " -1)
                 
@@ -296,7 +177,6 @@ checklists_menu() {
                     local base_name
                     base_name=$(basename "$active_file" | cut -d'_' -f1)
                     
-                    # Grab only unchecked items and strip the brackets
                     local unchecked
 		    unchecked=$(grep "^\[ \]" "$active_file" | sed -e 's/^\[ \] //' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/\r//')
                     
@@ -306,7 +186,6 @@ checklists_menu() {
                         continue
                     fi
                     
-                    # fzf multi-select for the user to pick which items to export
                     local selected_tasks
                     selected_tasks=$(echo "$unchecked" | fzf -m \
                         --prompt="❯ Select tasks to export: " \
@@ -320,12 +199,10 @@ checklists_menu() {
                         
                         echo "Exported selected tasks to Tuxedo!"
                         sleep 1
-                        trigger_sync background
                     fi
                 fi
                 ;;
             5*)
-                # Delete Active Checklist
                 local active_file
                 active_file=$(ls "$ACTIVE_CHECKLIST_DIR"/*.txt 2>/dev/null | fzf --prompt="❯ Delete Checklist: " -1)
                 if [[ -n "$active_file" ]]; then
@@ -334,7 +211,6 @@ checklists_menu() {
                         rm -f "$active_file"
                         echo "Checklist deleted."
                         sleep 1
-                        trigger_sync background
                     fi
                 fi
                 ;;
@@ -343,20 +219,8 @@ checklists_menu() {
     done
 }
 
-toggle_auto_sync() {
-    if [[ "$AUTO_SYNC" == "true" ]]; then
-        sed -i -E 's/^AUTO_SYNC=.*/AUTO_SYNC=false/' "$CONFIG_FILE"
-        echo "Auto-sync disabled."
-    else
-        sed -i -E 's/^AUTO_SYNC=.*/AUTO_SYNC=true/' "$CONFIG_FILE"
-	echo "Auto-sync enabled."
-    fi
-    source "$CONFIG_FILE"
-    sleep 1
-}
-
 # ==========================================
-# 4. REMINDERS & CRON
+# 3. REMINDERS & CRON
 # ==========================================
 check_reminders() {
     local mode=$1
@@ -397,14 +261,13 @@ check_reminders() {
         message="You have $task_count overdue task(s)."
     fi
 
-    # Only fire notification if there is at least 1 task
     if [[ "$task_count" -gt 0 ]]; then
         if command -v notify-send >/dev/null 2>&1; then
             local action
-            action=$(notify-send -t 0 "$title" "$message" \
+            action=$(notify-send -e -t 0 "$title" "$message" \
                 --action="open=Open Tuxedo" \
                 --action="dismiss=Dismiss" \
-                --icon=appointment-soon -u normal)
+                --icon=appointment-soon )
 
             if [[ "$action" == "open" ]]; then
                 launch_tuxedo
@@ -416,8 +279,6 @@ check_reminders() {
 }
 
 manage_cron_toggle() {
-    
-	# Define the backup path and create the backup safely
     local backup_file="/tmp/crontab_backup_$(date +%s).bak"
     crontab -l > "$backup_file" 2>/dev/null || true
     echo "Crontab backed up to: $backup_file"
@@ -431,21 +292,17 @@ manage_cron_toggle() {
     
     if [[ "$mode" == "today" ]]; then
         if crontab -l 2>/dev/null | grep -q "$tag_today"; then
-            # Currently ON -> Turn OFF
             (crontab -l 2>/dev/null | grep -v "$tag_today") | crontab -
             echo "Today's reminders disabled."
         else
-            # Currently OFF -> Turn ON (daily - every 4 hrs)
             (crontab -l 2>/dev/null | grep -v "$tag_today"; echo "0 */4 * * * $script_path --reminders-today $tag_today") | crontab -
             echo "Today's reminders enabled (daily - every 4 hrs)."
         fi
     elif [[ "$mode" == "overdue" ]]; then
         if crontab -l 2>/dev/null | grep -q "$tag_overdue"; then
-            # Currently ON -> Turn OFF
             (crontab -l 2>/dev/null | grep -v "$tag_overdue") | crontab -
             echo "Overdue reminders disabled."
         else
-            # Currently OFF -> Turn ON (every 4 hrs)
             (crontab -l 2>/dev/null | grep -v "$tag_overdue"; echo "0 */4 * * * $script_path --reminders-overdue $tag_overdue") | crontab -
             echo "Overdue reminders enabled (every 4 hrs)."
         fi
@@ -455,7 +312,6 @@ manage_cron_toggle() {
 
 reminders_menu() {
     while true; do
-        # 1. Check current status of crontabs
         local today_status="OFF"
         local overdue_status="OFF"
         
@@ -467,7 +323,6 @@ reminders_menu() {
             overdue_status="ON"
         fi
 
-        # 2. Build the menu options
         options=(
             "1. Current Day Reminders (Run Now)"
             "2. Overdue Reminders (Run Now)"
@@ -483,7 +338,6 @@ reminders_menu() {
 
         [[ -z "$choice" ]] && return 0
 
-        # 3. Handle selections
         case "$choice" in
             1*) check_reminders "today" ;;
             2*) check_reminders "overdue" ;;
@@ -496,7 +350,7 @@ reminders_menu() {
 
 show_helper() {
     clear
-    echo "Tuxedo Wrapper Help"
+    echo "Tuxedo Wrapper Help (Hub Edition)"
     echo "-------------------"
     echo "Usage: $0 [OPTIONS]"
     echo ""
@@ -504,8 +358,6 @@ show_helper() {
     echo "  -l, --launch            Launch Tuxedo UI"
     echo "  -a, --add               Add a quick todo"
     echo "  -c, --checklists        Open Checklists Menu"
-    echo "  -s, --sync              Manually trigger git sync"
-    echo "  -t, --toggle-sync       Toggle auto-sync feature"
     echo "  -rt, --reminders-today  Check today's tasks and notify"
     echo "  -ro, --reminders-overdue Check overdue tasks and notify"
     echo "  -h, --help              Show this help message"
@@ -514,33 +366,26 @@ show_helper() {
 }
 
 wrapper_exit() {
-    trigger_sync background
     exit 0
 }
 
 # ==========================================
-# 5. TUI MENU (FZF)
+# 4. TUI MENU (FZF)
 # ==========================================
 show_tui() {
     while true; do
-        SYNC_TRIGGERED=false
-        sync_status="OFF"
-        [[ "$AUTO_SYNC" == "true" ]] && sync_status="ON"
-
         options=(
             "1. Launch Tuxedo"
             "2. Add Quick Todo"
 	    "3. Checklists"
-            "4. Git Sync (Manual)"
-            "5. Toggle Auto-Sync (Currently: $sync_status)"
-            "6. Toggle Reminders (Menu)"
-            "7. Helper"
-            "8. Exit"
+            "4. Toggle Reminders (Menu)"
+            "5. Helper"
+            "6. Exit"
         )
 
         choice=$(printf "%s\n" "${options[@]}" | fzf \
             --prompt="❯ Tuxedo Menu: " \
-            --header="Select an action (ESC to exit)" \
+            --header="Select an action (ESC to exit & sync)" \
             --height=40% --layout=reverse --border)
 
         [[ -z "$choice" ]] && wrapper_exit
@@ -549,17 +394,15 @@ show_tui() {
             1*) launch_tuxedo ;;
             2*) add_quick_todo ;;
 	    3*) checklists_menu ;;
-	    4*) git_sync ;;
-            5*) toggle_auto_sync ;;
-            6*) reminders_menu ;;
-            7*) show_helper ;;
-            8*) wrapper_exit ;;
+            4*) reminders_menu ;;
+            5*) show_helper ;;
+            6*) wrapper_exit ;;
         esac
     done
 }
 
 # ==========================================
-# 6. CLI ARGUMENT PARSING
+# 5. CLI ARGUMENT PARSING
 # ==========================================
 check_dependencies
 
@@ -568,8 +411,6 @@ if [[ $# -gt 0 ]]; then
         -l|--launch)              launch_tuxedo ;;
         -a|--add)                 add_quick_todo ;;
 	-c|--checklists)          checklists_menu ;;
-        -s|--sync)                git_sync quiet ;;
-        -t|--toggle-sync)         toggle_auto_sync ;;
         -rt|--reminders-today)    check_reminders "today" ;;
         -ro|--reminders-overdue)  check_reminders "overdue" ;;
         -h|--help)                show_helper ;;

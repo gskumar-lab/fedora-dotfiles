@@ -1,76 +1,15 @@
 #!/usr/bin/env bash
 # TUI Note App: New, Read, Search, Tags, Quick Notes, Help
+# Optimized for Productivity Hub Integration
 
 # ==========================================
 # CONFIGURATION
 # ==========================================
-NOTES_DIR="${NOTES_DIR:-$HOME/Notes}"
+# Aligned with central Productivity Hub sync folder
+NOTES_DIR="${NOTES_DIR:-$HOME/.productivity-suite/data/notes}"
 QUICK_NOTES_FILE="$NOTES_DIR/quick-notes.txt"
 EDITOR="${EDITOR:-vim}"
 EXT=".md"
-
-# ==========================================
-# NOTIFICATIONS & BACKGROUND SYNC
-# ==========================================
-send_notification() {
-  local message="$1"
-  local status="${2:-success}"
-
-  # Exit silently if notify-send is not installed
-  if ! command -v notify-send >/dev/null 2>&1; then
-    return 0
-  fi
-
-  if [[ "$status" == "error" ]]; then
-    notify-send "Tuxedo Notes" "$message" -t 0 --icon=realtimesync
-  else
-    notify-send "Tuxedo Notes" "$message" -t 1000  -e --icon=freefilesync
-  fi
-}
-
-run_background_sync() {
-  local LOCK_FILE="$NOTES_DIR/.sync.lock"
-
-  # Check if lockfile exists AND the process is still running
-  if [[ -f "$LOCK_FILE" ]]; then
-    local lock_pid
-    lock_pid=$(cat "$LOCK_FILE" 2>/dev/null)
-    if [[ -n "$lock_pid" ]] && kill -0 "$lock_pid" 2>/dev/null; then
-      return 0
-    fi
-    rm -f "$LOCK_FILE"
-  fi
-
-  # Run in a subshell, ignore SIGHUP, guarantee lock removal on exit, detach IO
-  (
-    trap '' HUP
-    trap 'rm -f "$LOCK_FILE"' EXIT
-    echo $BASHPID > "$LOCK_FILE"
-    cd "$NOTES_DIR" || exit
-
-    git add -A
-    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
-      git commit -m "sync: auto-update $(date '+%Y-%m-%d %H:%M:%S')" >/dev/null
-    fi
-
-    if git remote | grep -q '.'; then
-      local current_branch
-      current_branch=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
-      [[ -z "$current_branch" || "$current_branch" == "HEAD" ]] && current_branch="main"
-
-      if git pull --rebase origin "$current_branch" >/dev/null 2>&1 && \
-         git push -u origin "$current_branch" >/dev/null 2>&1; then
-        send_notification "Sync complete!" "success"
-      else
-        send_notification "Sync failed! Merge conflict or network issue." "error"
-      fi
-    else
-      send_notification "Saved locally (no remote)." "success"
-    fi
-  ) </dev/null >/dev/null 2>&1 &
-
-  disown -h $! 2>/dev/null || disown
-}
 
 # ==========================================
 # QUICK NOTES INTEGRATION
@@ -177,63 +116,16 @@ cmd_view_quicknotes() {
   fi
 }
 
-cmd_sync() {
-  clear
-  local CYAN='\033[1;36m'
-  local GREEN='\033[1;32m'
-  local RED='\033[1;31m'
-  local YELLOW='\033[1;33m'
-  local NC='\033[0m'
-
-  cd "$NOTES_DIR" || return
-
-  if [ ! -d ".git" ]; then
-    echo -e "${YELLOW}⚠ Git repository not initialized in $NOTES_DIR.${NC}"
-    read -r -e -p "Would you like to initialize it now? (y/N): " init_ans
-    
-    if [[ "$init_ans" =~ ^[Yy]$ ]]; then
-      echo -e "\n• Initializing repository..."
-      git init
-      git branch -M main
-      
-      echo -e "\n${CYAN}To sync across devices, you need a remote repository.${NC}"
-      read -r -e -p "Enter remote URL (or press [ENTER] for local-only): " remote_url
-      
-      git add -A
-      git commit -m "Initial commit" >/dev/null
-      
-      if [ -n "$remote_url" ]; then
-        git remote add origin "$remote_url"
-        echo "• Pushing initial commit to remote..."
-        if git push -u origin main >/dev/null 2>&1; then
-           echo -e "${GREEN}✔ Initial setup and push complete!${NC}\n"
-        else
-           echo -e "${RED}✖ Push failed. Check your URL or network.${NC}\n"
-        fi
-      else
-        echo -e "${GREEN}✔ Local Git initialization complete.${NC}\n"
-      fi
-    else
-      echo "Sync cancelled."
-    fi
-    read -r -p "Press [ENTER] to return to menu..."
-    return
-  fi
-
-  echo -e "${CYAN}Syncing in background...${NC}"
-  run_background_sync
-  sleep 1
-}
-
 cmd_toggle_autosync() {
   clear
-  local config_file="$NOTES_DIR/.autosync"
-  if [ -f "$config_file" ] && grep -q "true" "$config_file"; then
-    echo "false" > "$config_file"
-    echo -e "\033[1;33m⏸ Auto-sync on exit is now DISABLED.\033[0m"
+  # Pointing to the main Productivity Hub autosync file
+  local hub_autosync_file="$HOME/.productivity-suite/.autosync"
+  if [ -f "$hub_autosync_file" ]; then
+    rm -f "$hub_autosync_file"
+    echo -e "\033[1;33m⏸ Hub Auto-sync on exit is now DISABLED.\033[0m"
   else
-    echo "true" > "$config_file"
-    echo -e "\033[1;32m▶ Auto-sync on exit is now ENABLED.\033[0m"
+    touch "$hub_autosync_file"
+    echo -e "\033[1;32m▶ Hub Auto-sync on exit is now ENABLED.\033[0m"
   fi
   sleep 1.5
 }
@@ -261,12 +153,11 @@ cmd_help() {
   echo -e "  • ${GREEN}-t, --tags${NC}         Browse notes by #tag"
   echo -e "  • ${GREEN}-qn, --quick${NC}        Jot a quick timestamped note"
   echo -e "  • ${GREEN}-vq, --view-quick${NC}   Search & copy quick notes"
-  echo -e "  • ${GREEN}--sync${NC}             Trigger Git sync"
   echo -e "\n${YELLOW}⚙️  ENVIRONMENT VARIABLES:${NC}"
   echo -e "  • ${GREEN}NOTES_DIR${NC}          Current: $NOTES_DIR"
   echo -e "  • ${GREEN}EDITOR${NC}             Current: $EDITOR"
   echo -e "\n${YELLOW}🔧 OPTIONAL TOOLS DETECTED:${NC}"
-  for tool in glow bat batcat wl-copy xclip notify-send; do
+  for tool in glow bat batcat wl-copy xclip; do
     if command -v "$tool" >/dev/null 2>&1; then
       echo -e "  • $tool: ${GREEN}✔ Installed${NC}"
     else
@@ -322,7 +213,6 @@ cmd_new() {
   read -r -e -p "Note Title: " title
   [[ -z "$title" ]] && return
 
-  # Find existing directories (excluding .git) and use fzf to select or type a new one
   local target_dir
   target_dir=$(find . -type d -not -path "*/\.git*" 2>/dev/null | sed 's|^\./||' | sort |
     fzf --prompt="📂 Select Folder (or type new) > " \
@@ -331,19 +221,14 @@ cmd_new() {
         --border=rounded \
         --height=50% | tail -n 1)
 
-  # If empty or root, default to current directory (.)
   [[ -z "$target_dir" || "$target_dir" == "." ]] && target_dir="."
 
-  # Create the directory if it doesn't exist
   if [[ ! -d "$target_dir" ]]; then
     mkdir -p "$target_dir"
   fi
 
   local file
-  # Construct the file path keeping the directory intact
   file="${target_dir}/$(slugify "$title")$EXT"
-  
-  # Clean up path visually if it starts with ./
   file="${file#./}"
 
   if [[ ! -f "$file" ]]; then
@@ -468,24 +353,23 @@ cd "$NOTES_DIR" || exit 1
 # Direct CLI arguments support
 if [[ $# -gt 0 ]]; then
   case "$1" in
-    -n|--new)        cmd_new; exit 0 ;;
-    -r|--read)       cmd_glow_tui; exit 0 ;;
-    -v|--view)	     cmd_read; exit 0;;
-    -s|--search)     cmd_search; exit 0 ;;
-    -t|--tags)       cmd_tags; exit 0 ;;
+    -n|--new)         cmd_new; exit 0 ;;
+    -r|--read)        cmd_glow_tui; exit 0 ;;
+    -v|--view)        cmd_read; exit 0;;
+    -s|--search)      cmd_search; exit 0 ;;
+    -t|--tags)        cmd_tags; exit 0 ;;
     -qn|--quick)      cmd_quicknote; exit 0 ;;
     -vq|--view-quick) cmd_view_quicknotes; exit 0 ;;
-    --sync)          cmd_sync; exit 0 ;;
-    -h|--help)       cmd_help; exit 0 ;;
+    -h|--help)        cmd_help; exit 0 ;;
     *) echo "Unknown option: $1 (use --help for reference)"; exit 1 ;;
   esac
 fi
 
 while true; do
   sync_status="Off"
-  if [ -f "$NOTES_DIR/.autosync" ] && grep -q "true" "$NOTES_DIR/.autosync"; then sync_status="On"; fi
+  if [ -f "$HOME/.productivity-suite/.autosync" ]; then sync_status="On"; fi
   
-  choice=$(printf "📝 New Note\n📖 Read Notes\n👁️ View Notes\n🔍 Search Notes\n🏷️ Browse by Tag\n⚡ Add Quick Note\n📜 View Quick Notes\n🔄 Sync Notes Now\n⚙️ Toggle Auto-Sync: [$sync_status]\n❓ Help / Info\n❌ Quit" |
+  choice=$(printf "📝 New Note\n📖 Read Notes\n👁️ View Notes\n🔍 Search Notes\n🏷️ Browse by Tag\n⚡ Add Quick Note\n📜 View Quick Notes\n⚙️ Toggle Hub Auto-Sync: [$sync_status]\n❓ Help / Info\n❌ Quit" |
     fzf --prompt="Menu> " \
       --layout=reverse \
       --border=rounded \
@@ -503,17 +387,11 @@ while true; do
   "🏷️ Browse by Tag") cmd_tags ;;
   "⚡ Add Quick Note") cmd_quicknote ;;
   "📜 View Quick Notes") cmd_view_quicknotes ;;
-  "🔄 Sync Notes Now") cmd_sync ;;
-  "⚙️ Toggle Auto-Sync: "*) cmd_toggle_autosync ;;
+  "⚙️ Toggle Hub Auto-Sync: "*) cmd_toggle_autosync ;;
   "❓ Help / Info") cmd_help ;;
   "❌ Quit" | "")
     clear
-    if [ "$sync_status" = "On" ] && [ -d ".git" ]; then
-      echo -e "\033[1;36m🔄 Auto-syncing in background...\033[0m"
-      run_background_sync
-    fi
     exit 0
     ;;
   esac
 done
-

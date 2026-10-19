@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 
 # ==========================================
 # SCRIPT SELF-EXECUTION / SUB-PROCESS FLAGS
@@ -44,12 +45,9 @@ if [[ "$1" == "--get-active" ]]; then
 fi
 
 if [[ "$1" == "--get-incomplete" ]]; then
-   
 	PAUSED=$(curl -s --connect-timeout 1 -d '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.tellWaiting", "params":["token:qdl-secret-123", 0, 100]}' "http://localhost:6800/jsonrpc" | jq -r '.result[]? | select(.status == "paused") | (if (.files[0]?.path // "") != "" then (.files[0].path | split("/") | last) else "Unknown" end) as $name | "[PAUSED] \(.gid) | \($name)"')
-
 	FAILED=$(curl -s --connect-timeout 1 -d '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.tellStopped", "params":["token:qdl-secret-123", 0, 100]}' "http://localhost:6800/jsonrpc" | jq -r '.result[]? | select(.errorCode != "0") | (if (.files[0]?.path // "") != "" then (.files[0].path | split("/") | last) else "Unknown" end) as $name | "[ERROR] \(.gid) | \($name)"')
-    
-    	CANCELED=$(awk '{print "[CANCELED] " $0}' "${XDG_DATA_HOME:-$HOME/.local/share}/qdl/canceled.txt" 2>/dev/null)
+    CANCELED=$(awk '{print "[CANCELED] " $0}' "${XDG_DATA_HOME:-$HOME/.local/share}/qdl/canceled.txt" 2>/dev/null)
     
     [[ -n "$PAUSED" ]] && echo "$PAUSED"
     [[ -n "$FAILED" ]] && echo "$FAILED"
@@ -91,20 +89,27 @@ if [ "\$NUM" -gt 0 ] && [ -e "\$FILE" ]; then
     RAND_HASH=\$(echo "\$REL_PATH" | cut -d'/' -f1)
     ISOLATED_DIR="$TEMP_DIR/\$RAND_HASH"
     
-    # Identify the actual downloaded file/folder inside the isolated directory
+    # Check if multiple loose files exist or just one folder/file
+    ITEM_COUNT=\$(find "\$ISOLATED_DIR" -mindepth 1 -maxdepth 1 | wc -l)
     ITEM_TO_MOVE=\$(find "\$ISOLATED_DIR" -mindepth 1 -maxdepth 1 | head -n 1)
     BASENAME=\$(basename "\$ITEM_TO_MOVE")
     
+    if [ "\$ITEM_COUNT" -gt 1 ]; then
+        LOG_NAME="\$BASENAME (+ \$((\$ITEM_COUNT - 1)) more)"
+    else
+        LOG_NAME="\$BASENAME"
+    fi
+    
     # Move the contents to the final download directory
-    mv -n "\$ISOLATED_DIR"/* "$DL_DIR/"
+    mv -n "\$ISOLATED_DIR"/* "$DL_DIR/" 2>/dev/null
     
     # Clean up the empty isolated directory
-    rmdir "\$ISOLATED_DIR" 2>/dev/null
+    rm -rf "\$ISOLATED_DIR" 
     
-    echo "\$(date '+%Y-%m-%d %H:%M:%S') | \$BASENAME" >> "$COMPLETED_FILE"
+    echo "\$(date '+%Y-%m-%d %H:%M:%S') | \$LOG_NAME" >> "$COMPLETED_FILE"
 
     if command -v notify-send &> /dev/null; then
-        notify-send "Download Complete" "\$BASENAME" -i downloader-arrow
+        notify-send "Download Complete" "\$LOG_NAME" -i downloader-arrow
     fi
 fi
 
@@ -212,7 +217,6 @@ while true; do
 
                     if [[ -f "$URL" && "$URL" == *.torrent ]]; then
                         B64=$(base64 -w 0 < "$URL")
-                        # addTorrent requires an empty array [] for URIs when passing options
                         PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg b64 "$B64" --arg dir "$TARGET_DIR" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.addTorrent", "params":[$token, $b64, [], {"dir": $dir}]}')
                     else
                         PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg url "$URL" --arg dir "$TARGET_DIR" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.addUri", "params":[$token, [$url], {"dir": $dir}]}')
@@ -235,7 +239,7 @@ while true; do
                 sleep 1.5
             fi
 
-	    clear
+	        clear
             ;;
             
         *2.*)
@@ -243,7 +247,7 @@ while true; do
             while true; do
                 OUTPUT=$(bash "$0" --get-active | fzf --prompt="Active ❯ " \
                     --header="Tab: Multi-select | P: Pause | C: Cancel | R: Refresh | Q/Esc: Menu" \
-		    --bind="r:reload(bash \"$0\" --get-active),R:reload(bash \"$0\" --get-active)" \
+		            --bind="r:reload(bash \"$0\" --get-active),R:reload(bash \"$0\" --get-active)" \
                     --expect=esc,q,p,c,P,C -m)
                 
                 KEY=$(echo "$OUTPUT" | head -n 1 | tr '[:upper:]' '[:lower:]')
@@ -259,28 +263,32 @@ while true; do
                         GID=$(echo "$line" | awk '{print $1}')
 
                         if [[ "$KEY" == "p" ]]; then
-                            PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg gid "$GID" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.pause", "params":[$token, $gid]}')
+                            # Use forcePause to immediately push pre-allocating tasks to waiting status
+                            PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg gid "$GID" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.forcePause", "params":[$token, $gid]}')
                             curl -s -d "$PAYLOAD" "http://localhost:$RPC_PORT/jsonrpc" > /dev/null
                         elif [[ "$KEY" == "c" ]]; then
                             
-			    INFO=$(curl -s -d '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.tellStatus", "params":["token:'"$RPC_SECRET"'", "'"$GID"'"]}' "http://localhost:$RPC_PORT/jsonrpc")
+                            INFO=$(curl -s -d '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.tellStatus", "params":["token:'"$RPC_SECRET"'", "'"$GID"'"]}' "http://localhost:$RPC_PORT/jsonrpc")
 
-			# Prevent parse errors by ensuring INFO is not empty
-			if [[ -n "$INFO" ]]; then
-    			# Add optional chaining (?) to safely navigate null paths
-    			T_URL=$(echo "$INFO" | jq -r '.result?.files?[0]?.uris?[0]?.uri // empty')
-    
-    			if [[ -z "$T_URL" ]]; then
-        			# Safely fall back to null-checked torrent names and paths
-        			T_NAME=$(echo "$INFO" | jq -r 'if .result?.bittorrent?.info?.name then .result.bittorrent.info.name elif (.result?.files?[0]?.path // "") != "" then (.result.files[0].path | split("/") | last) else empty end')
-        			if [[ -n "$T_NAME" ]]; then
-            				T_URL=$(grep -iF "$T_NAME" "$HISTORY_FILE" | tail -n 1 | awk -F" | " '{print $NF}')
-        			fi
-    			fi
-			fi
+                            if [[ -n "$INFO" ]]; then
+                                T_URL=$(echo "$INFO" | jq -r '.result?.files?[0]?.uris?[0]?.uri // empty')
+                                if [[ -z "$T_URL" ]]; then
+                                    T_NAME=$(echo "$INFO" | jq -r 'if .result?.bittorrent?.info?.name then .result.bittorrent.info.name elif (.result?.files?[0]?.path // "") != "" then (.result.files[0].path | split("/") | last) else empty end')
+                                    [[ -n "$T_NAME" ]] && T_URL=$(grep -iF "$T_NAME" "$HISTORY_FILE" | tail -n 1 | awk -F" | " '{print $NF}')
+                                fi
+                            fi
 
-                            PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg gid "$GID" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.remove", "params":[$token, $gid]}')
+                            # Use forceRemove to release active resources instantly
+                            PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg gid "$GID" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.forceRemove", "params":[$token, $gid]}')
                             curl -s -d "$PAYLOAD" "http://localhost:$RPC_PORT/jsonrpc" > /dev/null
+                            
+                            # Allow aria2 a moment to release file locks before deleting the temp directory
+                            sleep 0.2 
+                            
+                            DL_DIR_PATH=$(echo "$INFO" | jq -r '.result.dir // empty')
+                            if [[ -n "$DL_DIR_PATH" && "$DL_DIR_PATH" == "$TEMP_DIR"/* ]]; then
+                                rm -rf "$DL_DIR_PATH"
+                            fi
                             
                             if [ -n "$T_URL" ]; then
                                 echo "$T_URL" >> "$CANCELED_FILE"
@@ -360,32 +368,49 @@ while true; do
                             if [[ "$KEY" == "r" ]]; then
                                 PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg gid "$GID" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.unpause", "params":[$token, $gid]}')
                                 curl -s -d "$PAYLOAD" "http://localhost:$RPC_PORT/jsonrpc" > /dev/null
+
                             elif [[ "$KEY" == "c" ]]; then
+                                # Get the specific isolated directory from aria2 BEFORE removing the task
+                                DL_DIR_PATH=$(curl -s -d '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.tellStatus", "params":["token:'"$RPC_SECRET"'", "'"$GID"'"]}' "http://localhost:$RPC_PORT/jsonrpc" | jq -r '.result.dir // empty')
+
                                 PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg gid "$GID" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.removeDownloadResult", "params":[$token, $gid]}')
                                 curl -s -d "$PAYLOAD" "http://localhost:$RPC_PORT/jsonrpc" > /dev/null
                                 
-                                if [[ -n "$FILENAME" && "$FILENAME" != "." && "$FILENAME" != "/" ]]; then
-                                    rm -rf "${TEMP_DIR:?}/$FILENAME"*
+                                # Safely remove the entire isolated hash directory
+                                if [[ -n "$DL_DIR_PATH" && "$DL_DIR_PATH" == "$TEMP_DIR"/* ]]; then
+                                    rm -rf "$DL_DIR_PATH"
                                 fi
                             fi
+
                         elif [[ "$line" == \[CANCELED\]* ]]; then
                             URL="${line#*] }"
                             
                             if [[ "$KEY" == "r" ]]; then
-                                PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg url "$URL" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.addUri", "params":[$token, [$url]]}')
+                                # Generate new isolation directory for the retried task to ensure the hook resolves safely
+                                RAND_HASH=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8)
+                                TARGET_DIR="$TEMP_DIR/$RAND_HASH"
+                                
+                                PAYLOAD=$(jq -n --arg token "token:$RPC_SECRET" --arg url "$URL" --arg dir "$TARGET_DIR" '{"jsonrpc":"2.0", "id":"qdl", "method":"aria2.addUri", "params":[$token, [$url], {"dir": $dir}]}')
                                 curl -s -d "$PAYLOAD" "http://localhost:$RPC_PORT/jsonrpc" > /dev/null
                                 
                                 grep -v -F "$URL" "$CANCELED_FILE" > "${CANCELED_FILE}.tmp"
                                 mv "${CANCELED_FILE}.tmp" "$CANCELED_FILE"
+                            
                             elif [[ "$KEY" == "c" ]]; then
                                 grep -v -F "$URL" "$CANCELED_FILE" > "${CANCELED_FILE}.tmp"
                                 mv "${CANCELED_FILE}.tmp" "$CANCELED_FILE"
                                 
                                 URL_BASE=$(basename "$URL")
                                 if [[ -n "$URL_BASE" && "$URL_BASE" != "." && "$URL_BASE" != "/" ]]; then
-                                    rm -rf "${TEMP_DIR:?}/$URL_BASE"*
+                                    # Find and wipe the specific hash directory containing this abandoned file
+                                    for d in "$TEMP_DIR"/*/; do
+                                        if [[ -d "$d" ]] && find "$d" -name "$URL_BASE*" -print -quit | grep -q .; then
+                                            rm -rf "$d"
+                                        fi
+                                    done
                                 fi
                             fi
+                            
                         fi
                     done <<< "$SELECTIONS"
                 fi

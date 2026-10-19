@@ -59,9 +59,23 @@ append_notif() {
 }
 
 send_notification() {
-    # Send a single notification if the body has content
+    # 1. Define your icons for ON and OFF states
+    # You can use standard names or full file paths like "/home/user/icons/mic-on.png"
+    local ICON_ON="mic-on"
+    local ICON_OFF="mic-off"
+
+    local active_icon=""
+
+    # 2. Check the target state and assign the correct icon
+    if [[ "$MIC_TARGET" == "ON" ]]; then
+        active_icon="$ICON_ON"
+    else
+        active_icon="$ICON_OFF"
+    fi
+
+    # 3. Send the notification using the selected icon
     if [[ -n "$NOTIF_BODY" ]]; then
-        notify-send -u low -a "Audio Toggle" "Audio Status" "$NOTIF_BODY"
+        notify-send -e -i "$active_icon" -a "Audio Toggle" "Microphone Status" "$NOTIF_BODY"
     fi
 }
 

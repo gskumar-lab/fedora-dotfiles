@@ -140,10 +140,10 @@ end
 
 
 hl.window_rule({
-    name = "float-apps-by-title-size-tiny",
+    name = "float-apps-by-class-size-tiny",
     match = {
         -- Use regex to match multiple titles separated by a pipe (|)
-        title = "(?i)^()$" 
+        class = "(?i)^()$" 
     },
     float = true,
     size = { "max(monitor_w, monitor_h)*0.25", "min(monitor_w, monitor_h)*0.25" }, -- Sets width and height
@@ -151,10 +151,10 @@ hl.window_rule({
 })
 
 hl.window_rule({
-    name = "float-apps-by-title-size-small",
+    name = "float-apps-by-class-size-small",
     match = {
         -- Use regex to match multiple titles separated by a pipe (|)
-        title = "(?i)^(Quick-Todo|Quick-Note|Quick-Reminder|Pomodoro)$" 
+        class = "(?i)^(Quick-Todo|Quick-Note|QuickReminder|Pomodoro|Quick-Timers)$" 
     },
     float = true,
     size = { "max(monitor_w, monitor_h)*0.4", "min(monitor_w, monitor_h)*0.4" }, -- Sets width and height
@@ -162,10 +162,10 @@ hl.window_rule({
 })
 
 hl.window_rule({
-    name = "float-apps-by-title-size-medium",
+    name = "float-apps-by-class-size-medium",
     match = {
         -- Use regex to match multiple titles separated by a pipe (|)
-        title = "(?i)^(Pass-TUI|Ente Auth|Tuxedo-wrapper|Checklists|Note-Taker|Quick-Downloader|Habit-Tracker)$" 
+        class = "(?i)^(Pass-TUI|Ente Auth|Tuxedo-wrapper|Checklists|Note-Taker|integrated-notetaker|Integrated-Downloader|Habit-Tracker|routine-tui)$" 
     },
     float = true,
     size = { "max(monitor_w, monitor_h)*0.6", "min(monitor_w, monitor_h)*0.6" }, -- Sets width and height
@@ -173,10 +173,10 @@ hl.window_rule({
 })
 
 hl.window_rule({
-    name = "float-apps-by-title-size-large",
+    name = "float-apps-by-class-size-large",
     match = {
         -- Use regex to match multiple titles separated by a pipe (|)
-        title = "(?i)^(Yazi|Btop|Tuxedo)$" 
+        class = "(?i)^(Yazi|Btop|Tuxedo)$" 
     },
     float = true,
     size = { "max(monitor_w, monitor_h)*0.8", "min(monitor_w, monitor_h)*0.8" }, -- Sets width and height
@@ -184,3 +184,6 @@ hl.window_rule({
 })
 
 hl.window_rule({ name = "float-test", match = { title = "(?i)^(.*wants to open.*)$" }, float = true, center = true }) -- fix for gemini open dialogs
+
+--hl.window_rule({ match = { class = "(?i)^(Test)" }, float = true })
+

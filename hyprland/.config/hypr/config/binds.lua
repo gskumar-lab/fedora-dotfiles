@@ -96,23 +96,24 @@ hl.bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd(launchPrefix .. "fuzzel")) 
 hl.bind(mainMod .. " + period", hl.dsp.exec_cmd(noctCall .. "panel-toggle launcher /emo")) --| Emoji
 hl.bind(mainMod .. " + L", hl.dsp.exec_cmd(noctCall .. "session lock")) --| Lock session
 hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd(noctCall .. "panel-toggle session")) --| Power menu
-hl.bind(mainMod .. " + Y", hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Yazi -e yazi ")) --| Yazi file manager
-hl.bind(mainMod .. " + P", hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Pass-TUI -e ~/.local/scripts/pass-tui.sh")) --| Pass TUI
+hl.bind(mainMod .. " + Y", hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -a Yazi -e yazi ")) --| Yazi file manager
+hl.bind(mainMod .. " + P", hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -a Pass-TUI -e ~/.local/scripts/pass-tui.sh")) --| Pass TUI
 hl.bind(" ALT + Space", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/tools-manager.sh")) --| Tool manager
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/webapps-launcher.sh")) --| Webapps launcher
-hl.bind(mainMod .. " + CTRL + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Tuxedo-wrapper -e ~/.local/scripts/tuxedo-wrapper.sh")) --| Tuxedo wrapper
-hl.bind(mainMod .. " + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Tuxedo -e ~/.local/scripts/tuxedo-wrapper.sh -l")) --| Tuxedo todo
-hl.bind(mainMod .. " + ALT + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Quick-Todo -e ~/.local/scripts/tuxedo-wrapper.sh -a")) --| Quick todo
-hl.bind(mainMod .. " + ALT + C ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Checklists -e ~/.local/scripts/tuxedo-wrapper.sh -c")) --| Checklists
-hl.bind(mainMod .. " + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Note-Taker -e ~/.local/scripts/integrated-notetaker.sh")) --| Integrated Markdown notetaker
-hl.bind(mainMod .. " + ALT + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Quick-Note -e ~/.local/scripts/integrated-notetaker.sh -qn")) --| Quick note
-hl.bind(mainMod .. " + ALT + R ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Quick-Reminder -e ~/.local/scripts/quickreminder.sh")) --| Quick reminder
-hl.bind(mainMod .. " + ALT + D ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Quick-Downloader -e ~/.local/scripts/quick-download.sh")) --| Quick downloader
-hl.bind(mainMod .. " + H ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Habit-Tracker -e ~/.local/scripts/routine-tui.sh")) --| Habit/Routine tracker
-hl.bind(mainMod .. " + ALT + H ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -T Pomodoro -e ~/.local/scripts/routine-tui.sh --pomodoro")) --| Habit/Routine pomodoro 
+hl.bind(mainMod .. " + CTRL + T ",hl.dsp.exec_cmd(launchPrefix .. "  ~/.local/scripts/productivity-suite.sh -k")) --| Tuxedo wrapper
+hl.bind(mainMod .. " + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -a Tuxedo -e ~/.local/scripts/tuxedo-wrapper.sh -l")) --| Tuxedo todo
+hl.bind(mainMod .. " + ALT + T ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -a Quick-Todo -e ~/.local/scripts/tuxedo-wrapper.sh -a")) --| Quick todo
+hl.bind(mainMod .. " + ALT + C ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -a Checklists -e ~/.local/scripts/tuxedo-wrapper.sh -c")) --| Checklists
+hl.bind(mainMod .. " + N ",hl.dsp.exec_cmd(launchPrefix .. " ~/.local/scripts/productivity-suite.sh -n")) --| Integrated Markdown notetaker
+hl.bind(mainMod .. " + ALT + N ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -a Quick-Note -e ~/.local/scripts/integrated-notetaker.sh -qn")) --| Quick note
+hl.bind(mainMod .. " + ALT + R ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -a Quick-Reminder -e ~/.local/scripts/quickreminder.sh")) --| Quick reminder
+hl.bind(mainMod .. " + ALT + D ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -a Integrated-Downloader -e ~/.local/scripts/integrated-downloader.sh")) --| Integrated downloader
+hl.bind(mainMod .. " + H ",hl.dsp.exec_cmd(launchPrefix .. " ~/.local/scripts/productivity-suite.sh -r")) --| Habit/Routine tracker
+hl.bind(mainMod .. " + ALT + H ",hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -a Pomodoro -e ~/.local/scripts/routine-tui.sh --pomodoro")) --| Habit/Routine pomodoro 
 hl.bind(mainMod .. " + K", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/hypr-binds-fuzzel.sh")) --| Keybinds - shortcuts
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/toggle-mic.sh --mic-ee")) --| toggle mic + easy effects
 hl.bind(mainMod .. " + ALT + M", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/toggle-mic.sh --all")) --| toggle mic + easy effects + handy
+hl.bind(mainMod .. " + ALT + P", hl.dsp.exec_cmd(launchPrefix .. "~/.local/scripts/productivity-suite.sh")) --| Productivity suite
 hl.bind(" CONTROL + Space ", hl.dsp.exec_cmd(launchPrefix .. "handy --toggle-transcription")) --| voice dictate
 --hl.bind(" ALT + Z ", hl.dsp.exec_cmd(launchPrefix .. "voxtype record toggle")) --| voice dictate
 

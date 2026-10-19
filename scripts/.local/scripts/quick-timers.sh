@@ -9,10 +9,9 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config/gsk}/qtimer"
 PRESETS_FILE="$CONFIG_DIR/presets.txt"
 STATUS_FILE="/tmp/qtimer.status"
 
-# Terminal emulator command. 
-# For foot: "foot" 
-# For alacritty: "alacritty -e"
-TERMINAL_CMD="foot --title apps-float-tiny " 
+# Terminal emulator command. Inherits $TERMINAL from productivity-suite if available.
+TERMINAL_EXEC="${TERMINAL:-foot}"
+TERMINAL_CMD="$TERMINAL_EXEC -a quick-timers " 
 
 # --- Colors & Styling ---
 RED='\033[1;31m'
@@ -87,25 +86,20 @@ draw_progress_bar() {
     local filled=$(( pct * width / 100 ))
     local empty=$(( width - filled ))
     
-    # Format the raw seconds into MM:SS
     local cur_fmt tot_fmt
     printf -v cur_fmt "%02d:%02d" $((current / 60)) $((current % 60))
     printf -v tot_fmt "%02d:%02d" $((total / 60)) $((total % 60))
     
-    # Pure Bash string replication
     local filled_bar empty_bar
     [[ $filled -gt 0 ]] && printf -v filled_bar "%${filled}s" || filled_bar=""
     [[ $empty -gt 0 ]] && printf -v empty_bar "%${empty}s" || empty_bar=""
     
-    # Modern Unicode block characters
     filled_bar=${filled_bar// /█}
     empty_bar=${empty_bar// /░}
     
-    # ANSI Color Codes
-    local color="\e[32m" # Green 
+    local color="\e[32m" 
     local reset="\e[0m"
     
-    # Print with time format (MM:SS / MM:SS)
     printf "\r[${color}%s%s${reset}] %3d%%\n (%s / %s)\n" \
         "$filled_bar" "$empty_bar" "$pct" "$cur_fmt" "$tot_fmt"
 }
@@ -230,11 +224,10 @@ run_pomodoro() {
 # HELPERS & ROUTERS
 # ==============================================================================
 
-SCRIPT_PATH="$(command -v "$0" 2>/dev/null || echo "$0")"
-SCRIPT_PATH="$(realpath "$SCRIPT_PATH" 2>/dev/null || readlink -f "$SCRIPT_PATH" 2>/dev/null || echo "$SCRIPT_PATH")"
+SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}" 2>/dev/null || readlink -f "$BASH_SOURCE[0]" 2>/dev/null || echo "$BASH_SOURCE[0]")"
 
 spawn() {
-    # systemd-run launches the terminal completely outside the current process tree
+    #setsid -f $TERMINAL_CMD bash "$SCRIPT_PATH" "$@" >/dev/null 2>&1 & disown
     systemd-run --user --quiet $TERMINAL_CMD bash "$SCRIPT_PATH" "$@"
     exit 0
 }
@@ -378,4 +371,5 @@ if [[ -n "$1" ]]; then
 else
     main_menu
 fi
+
 

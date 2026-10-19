@@ -1,0 +1,519 @@
+#!/usr/bin/env bash
+# TUI Note App: New, Read, Search, Tags, Quick Notes, Help
+
+# ==========================================
+# CONFIGURATION
+# ==========================================
+NOTES_DIR="${NOTES_DIR:-$HOME/Notes}"
+QUICK_NOTES_FILE="$NOTES_DIR/quick-notes.txt"
+EDITOR="${EDITOR:-vim}"
+EXT=".md"
+
+# ==========================================
+# NOTIFICATIONS & BACKGROUND SYNC
+# ==========================================
+send_notification() {
+  local message="$1"
+  local status="${2:-success}"
+
+  # Exit silently if notify-send is not installed
+  if ! command -v notify-send >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [[ "$status" == "error" ]]; then
+    notify-send "Tuxedo Notes" "$message" -t 0 --icon=realtimesync
+  else
+    notify-send "Tuxedo Notes" "$message" -t 1000  -e --icon=freefilesync
+  fi
+}
+
+run_background_sync() {
+  local LOCK_FILE="$NOTES_DIR/.sync.lock"
+
+  # Check if lockfile exists AND the process is still running
+  if [[ -f "$LOCK_FILE" ]]; then
+    local lock_pid
+    lock_pid=$(cat "$LOCK_FILE" 2>/dev/null)
+    if [[ -n "$lock_pid" ]] && kill -0 "$lock_pid" 2>/dev/null; then
+      return 0
+    fi
+    rm -f "$LOCK_FILE"
+  fi
+
+  # Run in a subshell, ignore SIGHUP, guarantee lock removal on exit, detach IO
+  (
+    trap '' HUP
+    trap 'rm -f "$LOCK_FILE"' EXIT
+    echo $BASHPID > "$LOCK_FILE"
+    cd "$NOTES_DIR" || exit
+
+    git add -A
+    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+      git commit -m "sync: auto-update $(date '+%Y-%m-%d %H:%M:%S')" >/dev/null
+    fi
+
+    if git remote | grep -q '.'; then
+      local current_branch
+      current_branch=$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+      [[ -z "$current_branch" || "$current_branch" == "HEAD" ]] && current_branch="main"
+
+      if git pull --rebase origin "$current_branch" >/dev/null 2>&1 && \
+         git push -u origin "$current_branch" >/dev/null 2>&1; then
+        send_notification "Sync complete!" "success"
+      else
+        send_notification "Sync failed! Merge conflict or network issue." "error"
+      fi
+    else
+      send_notification "Saved locally (no remote)." "success"
+    fi
+  ) </dev/null >/dev/null 2>&1 &
+
+  disown -h $! 2>/dev/null || disown
+}
+
+# ==========================================
+# QUICK NOTES INTEGRATION
+# ==========================================
+cmd_quicknote() {
+  trap "tput rmcup; clear; return 1 2>/dev/null || exit 1" SIGINT SIGTERM
+  tput smcup
+  clear
+
+  local CYAN='\033[1;36m'
+  local GREEN='\033[1;32m'
+  local DIM='\033[2m'
+  local NC='\033[0m'
+
+  echo -e "${CYAN}╭────────────────────────────────────────────╮${NC}"
+  echo -e "${CYAN}│                 QUICK NOTE                 │${NC}"
+  echo -e "${CYAN}│       [ENTER] Save | [CTRL-C] Cancel       │${NC}"
+  echo -e "${CYAN}╰────────────────────────────────────────────╯${NC}"
+  echo ""
+
+  if [ -f "$QUICK_NOTES_FILE" ]; then
+    echo -e "${DIM}Recent entries:${NC}"
+    tail -n 3 "$QUICK_NOTES_FILE" | sed 's/^/  /'
+    echo ""
+  fi
+
+  read -r -e -p "❯ Type note: " NOTE
+
+  if [ -n "$NOTE" ]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $NOTE" >>"$QUICK_NOTES_FILE"
+    echo -e "\n${GREEN}✔ Saved successfully!${NC}\n"
+  else
+    echo -e "\n${DIM}✖ Cancelled (empty note).${NC}\n"
+  fi
+
+  read -r -p "Press [ENTER] to continue..."
+  tput rmcup
+  trap - SIGINT SIGTERM
+}
+
+cmd_glow_tui() {
+  if command -v glow >/dev/null 2>&1; then
+    glow -t "$NOTES_DIR"
+  else
+    echo -e "\033[1;31m✖ Error: glow is not installed.\033[0m"
+    sleep 2
+  fi
+}
+
+cmd_view_quicknotes() {
+  if ! command -v fzf >/dev/null 2>&1; then
+    echo -e "\033[1;31m✖ Error: fzf is required.\033[0m"
+    exit 1
+  fi
+
+  if [ ! -f "$QUICK_NOTES_FILE" ]; then
+    echo "No notes file found at $QUICK_NOTES_FILE"
+    sleep 2
+    return
+  fi
+
+  local REVERSE_CMD
+  if command -v tac >/dev/null 2>&1; then
+    REVERSE_CMD="tac"
+  elif tail -r /dev/null >/dev/null 2>&1; then
+    REVERSE_CMD="tail -r"
+  else
+    echo -e "\033[1;31m✖ Error: 'tac' or 'tail -r' needed.\033[0m"
+    sleep 2
+    return
+  fi
+
+  local HEADER="╭────────────────────────────────────────────────────────╮
+│ [ENTER] Copy | [CTRL-E] Edit | [CTRL-D] Delete | [ESC] │
+╰────────────────────────────────────────────────────────╯"
+
+  local SELECTED
+  SELECTED=$($REVERSE_CMD "$QUICK_NOTES_FILE" | fzf \
+    --layout=reverse \
+    --border=rounded \
+    --info=inline \
+    --prompt="🔍 Search Quick Notes ❯ " \
+    --header="$HEADER" \
+    --color=prompt:#5fff87,pointer:#ff5f87,header:#5fafd7 \
+    --bind "ctrl-e:execute($EDITOR \"$QUICK_NOTES_FILE\" >/dev/tty </dev/tty)+reload($REVERSE_CMD \"$QUICK_NOTES_FILE\")" \
+    --bind "ctrl-d:execute(bash -c 'read -r -p \"⚠ Delete this note? (y/N): \" ans </dev/tty; if [[ \$ans =~ ^[Yy]$ ]]; then grep -Fxv \"\$1\" \"$QUICK_NOTES_FILE\" > \"$QUICK_NOTES_FILE.tmp\"; mv \"$QUICK_NOTES_FILE.tmp\" \"$QUICK_NOTES_FILE\"; fi' _ {})+reload($REVERSE_CMD \"$QUICK_NOTES_FILE\")")
+
+  if [ -n "$SELECTED" ]; then
+    local CLEAN_NOTE
+    CLEAN_NOTE=$(echo "$SELECTED" | sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} - //')
+
+    clear
+    if command -v wl-copy >/dev/null 2>&1; then
+      echo -n "$CLEAN_NOTE" | wl-copy
+      echo -e "\033[1;32m✔ Copied (Wayland):\033[0m $CLEAN_NOTE"
+    elif command -v xclip >/dev/null 2>&1; then
+      echo -n "$CLEAN_NOTE" | xclip -selection clipboard
+      echo -e "\033[1;32m✔ Copied (X11):\033[0m $CLEAN_NOTE"
+    else
+      echo -e "\033[1;33m⚠ 'wl-copy' or 'xclip' not found.\033[0m"
+      echo -e "\033[1;36m❯ Selected:\033[0m $CLEAN_NOTE"
+    fi
+    read -r -p "Press [ENTER] to continue..."
+  fi
+}
+
+cmd_sync() {
+  clear
+  local CYAN='\033[1;36m'
+  local GREEN='\033[1;32m'
+  local RED='\033[1;31m'
+  local YELLOW='\033[1;33m'
+  local NC='\033[0m'
+
+  cd "$NOTES_DIR" || return
+
+  if [ ! -d ".git" ]; then
+    echo -e "${YELLOW}⚠ Git repository not initialized in $NOTES_DIR.${NC}"
+    read -r -e -p "Would you like to initialize it now? (y/N): " init_ans
+    
+    if [[ "$init_ans" =~ ^[Yy]$ ]]; then
+      echo -e "\n• Initializing repository..."
+      git init
+      git branch -M main
+      
+      echo -e "\n${CYAN}To sync across devices, you need a remote repository.${NC}"
+      read -r -e -p "Enter remote URL (or press [ENTER] for local-only): " remote_url
+      
+      git add -A
+      git commit -m "Initial commit" >/dev/null
+      
+      if [ -n "$remote_url" ]; then
+        git remote add origin "$remote_url"
+        echo "• Pushing initial commit to remote..."
+        if git push -u origin main >/dev/null 2>&1; then
+           echo -e "${GREEN}✔ Initial setup and push complete!${NC}\n"
+        else
+           echo -e "${RED}✖ Push failed. Check your URL or network.${NC}\n"
+        fi
+      else
+        echo -e "${GREEN}✔ Local Git initialization complete.${NC}\n"
+      fi
+    else
+      echo "Sync cancelled."
+    fi
+    read -r -p "Press [ENTER] to return to menu..."
+    return
+  fi
+
+  echo -e "${CYAN}Syncing in background...${NC}"
+  run_background_sync
+  sleep 1
+}
+
+cmd_toggle_autosync() {
+  clear
+  local config_file="$NOTES_DIR/.autosync"
+  if [ -f "$config_file" ] && grep -q "true" "$config_file"; then
+    echo "false" > "$config_file"
+    echo -e "\033[1;33m⏸ Auto-sync on exit is now DISABLED.\033[0m"
+  else
+    echo "true" > "$config_file"
+    echo -e "\033[1;32m▶ Auto-sync on exit is now ENABLED.\033[0m"
+  fi
+  sleep 1.5
+}
+
+cmd_help() {
+  clear
+  local CYAN='\033[1;36m'
+  local YELLOW='\033[1;33m'
+  local GREEN='\033[1;32m'
+  local BOLD='\033[1m'
+  local NC='\033[0m'
+
+  echo -e "${CYAN}╭──────────────────────────────────────────────────────╮${NC}"
+  echo -e "${CYAN}│${NC}              ${BOLD}TUXEDO NOTES - REFERENCE${NC}                ${CYAN}│${NC}"
+  echo -e "${CYAN}╰──────────────────────────────────────────────────────╯${NC}"
+  echo -e "\n${YELLOW}✨ KEYBINDINGS & NAVIGATION:${NC}"
+  echo -e "  • ${BOLD}Read / Search:${NC}     [ENTER] Open/Jump  | [CTRL-E] Edit | [CTRL-D] Delete"
+  echo -e "  • ${BOLD}Quick Notes:${NC}       [ENTER] Copy Text  | [CTRL-E] Edit | [CTRL-D] Delete"
+  echo -e "  • ${BOLD}Tag Browser:${NC}       Finds inline #tags across all Markdown notes"
+  echo -e "\n${YELLOW}💻 CLI FLAGS:${NC}"
+  echo -e "  • ${GREEN}-n, --new${NC}          Create a new Markdown note"
+  echo -e "  • ${GREEN}-v, --view${NC}         Browse and read notes"
+  echo -e "  • ${GREEN}-r, --read${NC}         Browse and read notes using Glow"
+  echo -e "  • ${GREEN}-s, --search${NC}       Full-text search across notes"
+  echo -e "  • ${GREEN}-t, --tags${NC}         Browse notes by #tag"
+  echo -e "  • ${GREEN}-qn, --quick${NC}        Jot a quick timestamped note"
+  echo -e "  • ${GREEN}-vq, --view-quick${NC}   Search & copy quick notes"
+  echo -e "  • ${GREEN}--sync${NC}             Trigger Git sync"
+  echo -e "\n${YELLOW}⚙️  ENVIRONMENT VARIABLES:${NC}"
+  echo -e "  • ${GREEN}NOTES_DIR${NC}          Current: $NOTES_DIR"
+  echo -e "  • ${GREEN}EDITOR${NC}             Current: $EDITOR"
+  echo -e "\n${YELLOW}🔧 OPTIONAL TOOLS DETECTED:${NC}"
+  for tool in glow bat batcat wl-copy xclip notify-send; do
+    if command -v "$tool" >/dev/null 2>&1; then
+      echo -e "  • $tool: ${GREEN}✔ Installed${NC}"
+    else
+      echo -e "  • $tool: \033[2m✖ Not found (optional)\033[0m"
+    fi
+  done
+  echo -e "\n${CYAN}────────────────────────────────────────────────────────${NC}\n"
+  read -r -p "Press [ENTER] to return..."
+}
+
+# ==========================================
+# MAIN VAULT PREVIEW LOGIC
+# ==========================================
+export FZF_PREVIEW_OPTS='
+    file={1}
+    line={2}
+    
+    if [ ! -f "$file" ]; then exit 1; fi
+    
+    if [ -n "$line" ]; then
+        cmd="cat"
+        if command -v bat >/dev/null 2>&1; then cmd="bat --color=always --style=plain";
+        elif command -v batcat >/dev/null 2>&1; then cmd="batcat --color=always --style=plain"; fi
+        eval "$cmd \"\$file\"" 2>/dev/null | tail -n +"$line" | head -n 30
+    else
+        if command -v glow >/dev/null 2>&1; then
+            glow -s auto -w 60 "$file" 2>/dev/null
+        else
+            cmd="cat"
+            if command -v bat >/dev/null 2>&1; then cmd="bat --color=always --style=plain";
+            elif command -v batcat >/dev/null 2>&1; then cmd="batcat --color=always --style=plain"; fi
+            eval "$cmd \"\$file\"" 2>/dev/null | head -n 30
+        fi
+    fi
+'
+
+slugify() {
+  echo "$1" | iconv -t ascii//TRANSLIT | sed -E -e 's/[^[:alnum:]]+/-/g' -e 's/^-+|-+$//g' | tr '[:upper:]' '[:lower:]'
+}
+
+open_in_editor() {
+  local file="$1"
+  local line="${2:-}"
+  if [[ -n "$line" ]]; then
+    $EDITOR "+$line" "$file"
+  else
+    $EDITOR "$file"
+  fi
+}
+
+cmd_new() {
+  clear
+  read -r -e -p "Note Title: " title
+  [[ -z "$title" ]] && return
+
+  # Find existing directories (excluding .git) and use fzf to select or type a new one
+  local target_dir
+  target_dir=$(find . -type d -not -path "*/\.git*" 2>/dev/null | sed 's|^\./||' | sort |
+    fzf --prompt="📂 Select Folder (or type new) > " \
+        --header="[ENTER] to select or create" \
+        --print-query \
+        --border=rounded \
+        --height=50% | tail -n 1)
+
+  # If empty or root, default to current directory (.)
+  [[ -z "$target_dir" || "$target_dir" == "." ]] && target_dir="."
+
+  # Create the directory if it doesn't exist
+  if [[ ! -d "$target_dir" ]]; then
+    mkdir -p "$target_dir"
+  fi
+
+  local file
+  # Construct the file path keeping the directory intact
+  file="${target_dir}/$(slugify "$title")$EXT"
+  
+  # Clean up path visually if it starts with ./
+  file="${file#./}"
+
+  if [[ ! -f "$file" ]]; then
+    echo "# $title" >"$file"
+    echo -e "\nTags: \nDate: $(date +%Y-%m-%d)\n" >>"$file"
+  fi
+  
+  open_in_editor "$file"
+}
+
+cmd_read() {
+  local header="╭──────────────────────────╮
+│ [ENTER]  Read            │
+│ [CTRL-E] Edit Note       │
+│ [CTRL-D] Delete Note     │
+╰──────────────────────────╯"
+  local result key file
+  result=$(find . -type f -name "*$EXT" 2>/dev/null | sed 's|^\./||' | sort -r |
+    fzf --prompt="📖 Read > " \
+      --header="$header" \
+      --expect=ctrl-e,ctrl-d \
+      --border=rounded \
+      --preview "$FZF_PREVIEW_OPTS" \
+      --preview-window="right:60%:wrap")
+
+  [[ -z "$result" ]] && return
+
+  key=$(echo "$result" | head -n 1)
+  file=$(echo "$result" | tail -n +2)
+
+  [[ -z "$file" ]] && return
+
+  if [[ "$key" == "ctrl-e" ]]; then
+    open_in_editor "$file"
+  elif [[ "$key" == "ctrl-d" ]]; then
+    clear
+    read -r -p "🗑️  Are you sure you want to delete '$file'? [y/N] " confirm
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+      rm -f "$file"
+      echo "Deleted."
+      sleep 1
+    fi
+  else
+    if command -v glow >/dev/null 2>&1; then glow -p -n "$file"
+    elif command -v bat >/dev/null 2>&1; then bat --paging=always "$file"
+    elif command -v batcat >/dev/null 2>&1; then batcat --paging=always "$file"
+    else less "$file"; fi
+  fi
+}
+
+cmd_search() {
+  local header="╭──────────────────────────╮
+│ [ENTER]  Jump to Line    │
+│ [CTRL-E] Edit File       │
+│ [CTRL-D] Delete File     │
+╰──────────────────────────╯"
+
+  local result key selected file line
+  result=$(rg --color=never -n -g "*$EXT" "^" . 2>/dev/null | sed 's|^\./||' |
+    fzf --prompt="🔍 Search > " \
+      --header="$header" \
+      --expect=ctrl-e,ctrl-d \
+      --border=rounded \
+      --delimiter : \
+      --preview "$FZF_PREVIEW_OPTS" \
+      --preview-window "right:60%:wrap")
+
+  [[ -z "$result" ]] && return
+
+  key=$(echo "$result" | head -n 1)
+  selected=$(echo "$result" | tail -n +2)
+
+  [[ -z "$selected" ]] && return
+
+  file=$(echo "$selected" | awk -F: '{print $1}')
+  line=$(echo "$selected" | awk -F: '{print $2}')
+
+  if [[ "$key" == "ctrl-d" ]]; then
+    clear
+    read -r -p "🗑️  Are you sure you want to delete '$file'? [y/N] " confirm
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+      rm -f "$file"
+      echo "Deleted."
+      sleep 1
+    fi
+  else
+    open_in_editor "$file" "$line"
+  fi
+}
+
+cmd_tags() {
+  local tag
+  tag=$(rg -o -g "*$EXT" '(^|\s)#[a-zA-Z0-9_-]+' . 2>/dev/null |
+    awk -F: '{gsub(/^[[:space:]]+/, "", $2); print $2}' |
+    sort | uniq -c | sort -nr |
+    fzf --prompt="🏷️  Select Tag> " --border=rounded | awk '{print $2}')
+
+  if [[ -n "$tag" ]]; then
+    local file
+    file=$(rg -l -g "*$EXT" "(^|\s)${tag}(\s|$)" . 2>/dev/null | sed 's|^\./||' |
+      fzf --prompt="Notes with $tag> " \
+        --border=rounded \
+        --preview "$FZF_PREVIEW_OPTS")
+    [[ -n "$file" ]] && open_in_editor "$file"
+  fi
+}
+
+# ==========================================
+# MAIN INITIALIZATION & LOOP
+# ==========================================
+_editor_cmd=$(echo "$EDITOR" | awk '{print $1}')
+
+for cmd in rg fzf "$_editor_cmd"; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Error: $cmd is required." && exit 1
+  fi
+done
+
+mkdir -p "$NOTES_DIR"
+cd "$NOTES_DIR" || exit 1
+
+# Direct CLI arguments support
+if [[ $# -gt 0 ]]; then
+  case "$1" in
+    -n|--new)        cmd_new; exit 0 ;;
+    -r|--read)       cmd_glow_tui; exit 0 ;;
+    -v|--view)	     cmd_read; exit 0;;
+    -s|--search)     cmd_search; exit 0 ;;
+    -t|--tags)       cmd_tags; exit 0 ;;
+    -qn|--quick)      cmd_quicknote; exit 0 ;;
+    -vq|--view-quick) cmd_view_quicknotes; exit 0 ;;
+    --sync)          cmd_sync; exit 0 ;;
+    -h|--help)       cmd_help; exit 0 ;;
+    *) echo "Unknown option: $1 (use --help for reference)"; exit 1 ;;
+  esac
+fi
+
+while true; do
+  sync_status="Off"
+  if [ -f "$NOTES_DIR/.autosync" ] && grep -q "true" "$NOTES_DIR/.autosync"; then sync_status="On"; fi
+  
+  choice=$(printf "📝 New Note\n📖 Read Notes\n👁️ View Notes\n🔍 Search Notes\n🏷️ Browse by Tag\n⚡ Add Quick Note\n📜 View Quick Notes\n🔄 Sync Notes Now\n⚙️ Toggle Auto-Sync: [$sync_status]\n❓ Help / Info\n❌ Quit" |
+    fzf --prompt="Menu> " \
+      --layout=reverse \
+      --border=rounded \
+      --margin=5%,10% \
+      --padding=1,2 \
+      --info=hidden \
+      --header=" Vault: $NOTES_DIR " \
+      --header-first)
+
+  case "$choice" in
+  "📝 New Note") cmd_new ;;
+  "📖 Read Notes") cmd_glow_tui ;;
+  "👁️ View Notes") cmd_read ;;
+  "🔍 Search Notes") cmd_search ;;
+  "🏷️ Browse by Tag") cmd_tags ;;
+  "⚡ Add Quick Note") cmd_quicknote ;;
+  "📜 View Quick Notes") cmd_view_quicknotes ;;
+  "🔄 Sync Notes Now") cmd_sync ;;
+  "⚙️ Toggle Auto-Sync: "*) cmd_toggle_autosync ;;
+  "❓ Help / Info") cmd_help ;;
+  "❌ Quit" | "")
+    clear
+    if [ "$sync_status" = "On" ] && [ -d ".git" ]; then
+      echo -e "\033[1;36m🔄 Auto-syncing in background...\033[0m"
+      run_background_sync
+    fi
+    exit 0
+    ;;
+  esac
+done
+
