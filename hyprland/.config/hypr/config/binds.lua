@@ -86,7 +86,7 @@ hl.bind(mainMod .. " + G", hl.dsp.exec_cmd(launchPrefix .. EDITOR)) --| Text edi
 hl.bind("XF86Calculator", hl.dsp.exec_cmd(launchPrefix .. CALCULATOR)) --| Calculator
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(launchPrefix .. BROWSER)) --| Browser - brave origin
 hl.bind(mainMod .. " + ALT + B", hl.dsp.exec_cmd(launchPrefix .. BROWSER .. " --incognito  ")) --| Browser incognito - brave origin
-hl.bind(mainMod .. " + Delete", hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -e -T Btop btop")) --| System monitor - btop
+hl.bind(mainMod .. " + Delete", hl.dsp.exec_cmd(launchPrefix .. TERMINAL .. " -e -a Btop btop")) --| System monitor - btop
 hl.bind(mainMod .. " + Z", hl.dsp.exec_cmd(launchPrefix .. "zen-browser --new-window")) --| Browser - zen browser
 hl.bind(mainMod .. " + ALT + Z", hl.dsp.exec_cmd(launchPrefix .. "zen-browser --private-window")) --| Browser incognito - zen browser
 hl.bind(mainMod .. " + S", hl.dsp.exec_cmd(noctCall .. "settings-toggle")) --| Noctalia settings

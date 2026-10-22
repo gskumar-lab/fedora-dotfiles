@@ -154,7 +154,7 @@ hl.window_rule({
     name = "float-apps-by-class-size-small",
     match = {
         -- Use regex to match multiple titles separated by a pipe (|)
-        class = "(?i)^(Quick-Todo|Quick-Note|QuickReminder|Pomodoro|Quick-Timers)$" 
+        class = "(?i)^(Quick-Todo|Quick-Note|QuickReminder|Pomodoro|Quick-Timers|org.gnome.SoundRecorder)$" 
     },
     float = true,
     size = { "max(monitor_w, monitor_h)*0.4", "min(monitor_w, monitor_h)*0.4" }, -- Sets width and height
@@ -185,5 +185,23 @@ hl.window_rule({
 
 hl.window_rule({ name = "float-test", match = { title = "(?i)^(.*wants to open.*)$" }, float = true, center = true }) -- fix for gemini open dialogs
 
+-- Full screen
+
+hl.window_rule({ match = { class = "(?i)^(mpv)" }, fullscreen = true })
+
+
+
+
+
 --hl.window_rule({ match = { class = "(?i)^(Test)" }, float = true })
+
+
+
+
+
+
+
+
+
+
 

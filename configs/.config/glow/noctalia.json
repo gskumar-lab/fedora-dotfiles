@@ -15,14 +15,14 @@
   },
   "heading": {
     "block_suffix": "\n",
-    "color": "#9fcaff",
+    "color": "#4cdadb",
     "bold": true
   },
   "h1": {
     "prefix": " ",
     "suffix": " ",
-    "color": "#003259",
-    "background_color": "#9fcaff",
+    "color": "#003737",
+    "background_color": "#4cdadb",
     "bold": true
   },
   "h2": {
@@ -39,7 +39,7 @@
   },
   "h6": {
     "prefix": "###### ",
-    "color": "#9fcaff",
+    "color": "#4cdadb",
     "bold": false
   },
   "strikethrough": {
@@ -66,15 +66,15 @@
     "unticked": "[ ] "
   },
   "link": {
-    "color": "#bbc7db",
+    "color": "#b0cccb",
     "underline": true
   },
   "link_text": {
-    "color": "#9fcaff",
+    "color": "#4cdadb",
     "bold": true
   },
   "image": {
-    "color": "#d7bee4",
+    "color": "#b3c8e9",
     "underline": true
   },
   "image_text": {
@@ -83,7 +83,7 @@
   "code": {
     "prefix": " ",
     "suffix": " ",
-    "color": "#d7bee4",
+    "color": "#b3c8e9",
     "background_color": "#474747"
   },
   "code_block": {
@@ -96,18 +96,18 @@
         "background_color": "#ffb4ab"
       },
       "comment": { "color": "#919191" },
-      "keyword": { "color": "#9fcaff" },
-      "keyword_reserved": { "color": "#d7bee4" },
-      "keyword_type": { "color": "#bbc7db" },
-      "operator": { "color": "#d7bee4" },
+      "keyword": { "color": "#4cdadb" },
+      "keyword_reserved": { "color": "#b3c8e9" },
+      "keyword_type": { "color": "#b0cccb" },
+      "operator": { "color": "#b3c8e9" },
       "punctuation": { "color": "#c6c6c6" },
       "name": { "color": "#e2e2e2" },
-      "name_builtin": { "color": "#9fcaff" },
-      "name_function": { "color": "#9fcaff" },
-      "literal_number": { "color": "#bbc7db" },
-      "literal_string": { "color": "#bbc7db" },
+      "name_builtin": { "color": "#4cdadb" },
+      "name_function": { "color": "#4cdadb" },
+      "literal_number": { "color": "#b0cccb" },
+      "literal_string": { "color": "#b0cccb" },
       "generic_deleted": { "color": "#ffb4ab" },
-      "generic_inserted": { "color": "#bbc7db" },
+      "generic_inserted": { "color": "#b0cccb" },
       "background": { "background_color": "#131313" }
     }
   },

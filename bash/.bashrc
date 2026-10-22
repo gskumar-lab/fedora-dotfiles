@@ -7,7 +7,6 @@ fi
 
 # User PATH
 export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.cargo/bin:$HOME/.local/scripts:$PATH"
-#export TODO_DIR="$HOME/Todo"
 
 # Uncomment the following line if you don't like systemctl's auto-paging feature:
 # export SYSTEMD_PAGER=
@@ -27,7 +26,6 @@ alias c="bat -p"
 alias syu="sudo dnf upgrade --refresh"
 alias mkdir="mkdir -pv"
 alias x="chmod +x"
-#alias rmdir="rmdir -v"
 
 #Bulletproof History
 #By default, bash history is too short and saves typos and duplicate commands. These settings ensure you never lose a complex command again.
