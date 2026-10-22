@@ -5,11 +5,15 @@ set -uo pipefail
 
 # Integrated Configuration: Exporting to force the tuxedo binary to use the Hub data directory
 export TUXEDO_DIR="$HOME/.productivity-suite/data/Todo"
-TODO_DIR="$TUXEDO_DIR"
-TODO_FILE="$TODO_DIR/todo.txt"
+export TODO_DIR="$TUXEDO_DIR"
+export TODO_FILE="$TODO_DIR/todo.txt"
 CHECKLIST_DIR="$TODO_DIR/checklists"
 ACTIVE_CHECKLIST_DIR="$CHECKLIST_DIR/active"
 mkdir -p "$TODO_DIR" "$CHECKLIST_DIR" "$ACTIVE_CHECKLIST_DIR"
+touch "$TODO_FILE"
+
+SCRIPT_PATH=$(realpath "$0" 2>/dev/null || readlink -f "$0")
+TERM_CMD="${TERMINAL:-foot}"
 
 # ==========================================
 # 1. DEPENDENCY CHECKS
@@ -43,7 +47,8 @@ send_notification() {
 }
 
 launch_tuxedo() {
-    tuxedo
+    tuxedo $TODO_FILE
+    #bash -c tuxedo $TODO_FILE
 }
 
 add_quick_todo() {
@@ -270,7 +275,7 @@ check_reminders() {
                 --icon=appointment-soon )
 
             if [[ "$action" == "open" ]]; then
-                launch_tuxedo
+                "$TERM_CMD" -e "$SCRIPT_PATH" -l  & disown
             fi
         else
             echo -e "=== $title ===\n$message"

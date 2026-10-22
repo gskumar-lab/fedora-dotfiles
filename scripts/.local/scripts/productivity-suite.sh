@@ -155,7 +155,7 @@ launch_and_sync() {
   
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] Launching: $script_name" >> "$LOG_FILE" 
     # Launch the terminal with the sub-script's name as the app-id (-a)
-    $TERMINAL -a "$script_name" -e "$script_path"
+    $TERMINAL -a "$script_name" -e bash -l -c "$script_path"
 
     # Check if autosync is enabled after the terminal closes
     if [ -f "$AUTOSYNC_STATE_FILE" ]; then
