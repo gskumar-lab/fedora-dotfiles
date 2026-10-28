@@ -9,7 +9,7 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config/gsk}/qtimer"
 PRESETS_FILE="$CONFIG_DIR/presets.txt"
 STATUS_FILE="/tmp/qtimer.status"
 
-# Terminal emulator command. Inherits $TERMINAL from productivity-suite if available.
+# Terminal emulator command. Inherits $TERMINAL from productivity-old if available.
 TERMINAL_EXEC="${TERMINAL:-foot}"
 TERMINAL_CMD="$TERMINAL_EXEC -a quick-timers " 
 

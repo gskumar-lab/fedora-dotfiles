@@ -4,7 +4,7 @@
 set -uo pipefail
 
 # Integrated Configuration: Exporting to force the tuxedo binary to use the Hub data directory
-export TUXEDO_DIR="$HOME/.productivity-suite/data/Todo"
+export TUXEDO_DIR="$HOME/.productivity-old/data/Todo"
 export TODO_DIR="$TUXEDO_DIR"
 export TODO_FILE="$TODO_DIR/todo.txt"
 CHECKLIST_DIR="$TODO_DIR/checklists"

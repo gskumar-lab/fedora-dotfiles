@@ -12,7 +12,7 @@
 # prompt if Topgrade detects it is being run as root.
 # (default: false)
 # allow_root = false
-disable = ["hyprpm"]
+disable = ["hyprpm","containers"]
 
 
 

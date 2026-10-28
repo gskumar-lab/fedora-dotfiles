@@ -6,7 +6,7 @@
 # CONFIGURATION
 # ==========================================
 # Aligned with central Productivity Hub sync folder
-NOTES_DIR="${NOTES_DIR:-$HOME/.productivity-suite/data/notes}"
+NOTES_DIR="${NOTES_DIR:-$HOME/.productivity-old/data/notes}"
 QUICK_NOTES_FILE="$NOTES_DIR/quick-notes.txt"
 EDITOR="${EDITOR:-vim}"
 EXT=".md"
@@ -119,7 +119,7 @@ cmd_view_quicknotes() {
 cmd_toggle_autosync() {
   clear
   # Pointing to the main Productivity Hub autosync file
-  local hub_autosync_file="$HOME/.productivity-suite/.autosync"
+  local hub_autosync_file="$HOME/.productivity-old/.autosync"
   if [ -f "$hub_autosync_file" ]; then
     rm -f "$hub_autosync_file"
     echo -e "\033[1;33m⏸ Hub Auto-sync on exit is now DISABLED.\033[0m"
@@ -367,7 +367,7 @@ fi
 
 while true; do
   sync_status="Off"
-  if [ -f "$HOME/.productivity-suite/.autosync" ]; then sync_status="On"; fi
+  if [ -f "$HOME/.productivity-old/.autosync" ]; then sync_status="On"; fi
   
   choice=$(printf "📝 New Note\n📖 Read Notes\n👁️ View Notes\n🔍 Search Notes\n🏷️ Browse by Tag\n⚡ Add Quick Note\n📜 View Quick Notes\n⚙️ Toggle Hub Auto-Sync: [$sync_status]\n❓ Help / Info\n❌ Quit" |
     fzf --prompt="Menu> " \

@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Configuration
-SCRIPTS_DIR="$HOME/.productivity-suite/scripts"
+SCRIPTS_DIR="$HOME/.productivity-old/scripts"
 export TERMINAL="foot" 
-AUTOSYNC_STATE_FILE="$HOME/.productivity-suite/.autosync"
-LOG_FILE="$HOME/.productivity-suite/hub.log"
+AUTOSYNC_STATE_FILE="$HOME/.productivity-old/.autosync"
+LOG_FILE="$HOME/.productivity-old/hub.log"
 
 # Configuration for Sync
-SYNC_DIR="$HOME/.productivity-suite/data"
+SYNC_DIR="$HOME/.productivity-old/data"
 BRANCH="main"
 GIT_USER_NAME="Productivity Hub"
 GIT_USER_EMAIL="hub@local"
@@ -16,7 +16,7 @@ show_help() {
     cat << 'EOF'
 Productivity Hub Helper
 =======================
-Usage: ./productivity-suitev6.sh [OPTION]
+Usage: ./productivity-oldv6.sh [OPTION]
 
 CLI Options:
   -n, --notes    Launch integrated notetaker
@@ -160,7 +160,7 @@ launch_and_sync() {
     # Check if autosync is enabled after the terminal closes
     if [ -f "$AUTOSYNC_STATE_FILE" ]; then
         echo "[$(date +'%Y-%m-%d %H:%M:%S')] Autosync triggered by $script_name" >> "$LOG_FILE"
-	sync_data > "$HOME/.productivity-suite/sync.log" 2>&1 &
+	sync_data > "$HOME/.productivity-old/sync.log" 2>&1 &
         disown
     fi
 }

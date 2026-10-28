@@ -71,6 +71,7 @@ local terminals = "^(kitty|foot|ghostty|[Kk]onsole|Alacritty|gnome-terminal|xfce
 hl.window_rule({ match = { class = "^(firefox|brave|brave-origin|zen)$" }, opacity = "1.0 override" })
 hl.window_rule({ match = { class = terminals }, opacity = "0.95 override" }) -- Override opacity in favor of terminal settings for opacity. If your terminal doesn't support transparency, you can remove this rule.
 hl.window_rule({ match = { class = "^(mpv|org.kde.haruna|.*plex.*|org\\.kde\\.gwenview|.*vlc.*)$" }, opacity = "1.0 override" })
+hl.window_rule({ match = { class = "(?i)^(.*zed.*)$" }, opacity = "1.0 override" })
 
 -- Float Utility Windows
 local floatApps = {
@@ -154,7 +155,7 @@ hl.window_rule({
     name = "float-apps-by-class-size-small",
     match = {
         -- Use regex to match multiple titles separated by a pipe (|)
-        class = "(?i)^(Quick-Todo|Quick-Note|QuickReminder|Pomodoro|Quick-Timers|org.gnome.SoundRecorder)$" 
+        class = "(?i)^(Quick Todo|Quick Note|Pomodoro|routine pomodoro|Quick Timers|org.gnome.SoundRecorder)$" 
     },
     float = true,
     size = { "max(monitor_w, monitor_h)*0.4", "min(monitor_w, monitor_h)*0.4" }, -- Sets width and height
@@ -165,7 +166,7 @@ hl.window_rule({
     name = "float-apps-by-class-size-medium",
     match = {
         -- Use regex to match multiple titles separated by a pipe (|)
-        class = "(?i)^(Pass-TUI|Ente Auth|Tuxedo-wrapper|Checklists|Note-Taker|integrated-notetaker|Integrated-Downloader|Habit-Tracker|routine-tui)$" 
+        class = "(?i)^(Pass-TUI|Ente Auth|Checklists|Note-Taker|Integrated-Downloader|Habit-Tracker|routine tui)$" 
     },
     float = true,
     size = { "max(monitor_w, monitor_h)*0.6", "min(monitor_w, monitor_h)*0.6" }, -- Sets width and height
@@ -176,7 +177,7 @@ hl.window_rule({
     name = "float-apps-by-class-size-large",
     match = {
         -- Use regex to match multiple titles separated by a pipe (|)
-        class = "(?i)^(Yazi|Btop|Tuxedo)$" 
+        class = "(?i)^(Yazi|Btop|Tuxedo task manager|Integrated notetaker)$" 
     },
     float = true,
     size = { "max(monitor_w, monitor_h)*0.8", "min(monitor_w, monitor_h)*0.8" }, -- Sets width and height

@@ -195,9 +195,6 @@ time_format = "%I:%M %p"
     layout = "simple"
     sort_by_usage = false
 
-    [shell.panel]
-    transparency_mode = "soft"
-
     [[shell.session.actions]]
     action = "lock"
     countdown_seconds = 0.0
@@ -246,6 +243,7 @@ wallpaper_scheme = "m3-rainbow"
         "zen-browser",
         "telegram",
         "neovim",
+        "zed",
         "fuzzel",
         "rofi",
         "fastfetch",
@@ -265,15 +263,16 @@ transition_on_startup = true
 
     [wallpaper.automation]
     enabled = true
+    interval_seconds = 3600
 
     [wallpaper.default]
-    path = "/home/gskumar/.config/backgrounds/wallhaven-k8dmwm_1920x1080.jpeg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-w5x99p_1920x1080.jpeg"
 
     [wallpaper.last]
-    path = "/home/gskumar/.config/backgrounds/wallhaven-k8dmwm_1920x1080.jpeg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-w5x99p_1920x1080.jpeg"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/gskumar/.config/backgrounds/wallhaven-k8dmwm_1920x1080.jpeg"
+    path = "/home/gskumar/.config/backgrounds/wallhaven-w5x99p_1920x1080.jpeg"
 
 [weather]
 enabled = false

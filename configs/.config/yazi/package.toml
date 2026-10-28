@@ -1,7 +1,7 @@
 [[plugin.deps]]
 use = "yazi-rs/plugins:mount"
-rev = "9166202"
-hash = "b95f898e6dc60b52edbc415952e14395"
+rev = "e0bbd20"
+hash = "ba1a606728adb75b091b6eaf3fd60372"
 
 [[plugin.deps]]
 use = "ndtoan96/ouch"

@@ -13,8 +13,8 @@ SCRIPT_NAME=$(basename "$SCRIPT_PATH")
 # Use environment TERMINAL if set, otherwise fallback to foot
 TERM_CMD="${TERMINAL:-foot}"
 
-# OPTIMIZATION: Pointed to the productivity-suite data directory for Git auto-sync
-DIR="$HOME/.productivity-suite/data/routine"
+# OPTIMIZATION: Pointed to the productivity-old data directory for Git auto-sync
+DIR="$HOME/.productivity-old/data/routine"
 mkdir -p "$DIR"
 
 MASTER="$DIR/master.txt"
